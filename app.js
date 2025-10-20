@@ -38,6 +38,53 @@ const subjectsMaster = [
   { id: 'fri-5', name: '', dayOfWeek: '金曜日', slot: 5, dataId: 'fri-5' }
 ];
 
+// 科目名マッピング（@tabler → @platform）
+const subjectMapping = {
+  'CS': 'CS',
+  'Cプロ': 'Cプロ',
+  '線形代数': '線形代数',
+  '微分積分': '微分積分',
+  'ALC': 'ALC',
+  '電磁気学A': '電磁気学A',
+  '力学A': '力学A',
+  '生命科学A': '生命科学A',
+  '実験': '実験',
+  '中国語IA': '中国語IA',
+  '憲法IB': '憲法IB',
+  '電生': '電生',
+  '化学': '化学',
+  '科学と芸術': '科学と芸術',
+  '身体論': '身体論',
+  '電基礎': '電基礎'
+};
+
+// ランダムカラー生成関数
+function generateRandomColor() {
+  const colors = [
+    '#E3F2FD', // 水色
+    '#F3E5F5', // ラベンダー
+    '#FFF8E1', // クリーム
+    '#E0F7FA', // ターコイズ
+    '#F1F8E9', // ミントグリーン
+    '#FCE4EC', // ピンク
+    '#EDE7F6', // ライトパープル
+    '#FFF3E0', // アプリコット
+    '#E8F5E9', // セージグリーン
+    '#E1F5FE', // スカイブルー
+    '#E8EAF6', // ライトブルー
+    '#FFF9C4', // イエロー
+    '#FCE4EC', // ローズ
+    '#E8F5E8', // ライム
+    '#F3E5F5', // オーキッド
+    '#E0F2F1', // ティール
+    '#FFF3E0', // オレンジ
+    '#F1F8E9', // グリーン
+    '#E3F2FD', // ブルー
+    '#FCE4EC'  // ピンク
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
 // 科目ごとの背景色を定義（薄い色で見やすく）
 const subjectColors = {
   'CS': '#FFE6E8', // コンピュータサイエンス - 薄いピンク
@@ -179,6 +226,7 @@ function loadSubjects() {
           if (data) {
             // Firebaseから読み込んだデータにdataIdフィールドがない場合は科目名を使用
             subjectsData = Object.values(data).map(subject => ({
+              // totalTime を破棄
               id: subject.id || subject.dataId || subject.name,
               name: subject.name,
               dataId: subject.dataId || subject.name || subject.id,
@@ -221,6 +269,7 @@ function loadSubjects() {
         name: s.name, 
         dataId: s.dataId,
         progress: 0, 
+        totalTime: 0, 
         lastUpdated: null 
       }));
       console.log('初期科目データを作成（ローカル）');
@@ -351,9 +400,6 @@ function generateTimetable(timetableData) {
   // 現在の時間割データを保存
   window.currentTimetableData = timetableData;
   
-  console.log('=== 時間割データ ===');
-  console.log('timetableData:', timetableData);
-  
   const timetable = document.getElementById('timetable');
   timetable.innerHTML = '';
 
@@ -456,6 +502,7 @@ function generateTimetable(timetableData) {
         progressText.id = `text-${period.name}-${day}`;
         cell.appendChild(progressText);
 
+          // 学習時間表示は削除
 
         cell.addEventListener('click', () => {
           showTaskModal(period.name, day, subjectName);
@@ -468,14 +515,12 @@ function generateTimetable(timetableData) {
   
   // 時間割生成後にタスク数バッジを再表示
   if (window.tasks) {
-    console.log('🔄 時間割生成後にタスク数バッジを再表示');
     updateTaskNumbers(window.tasks);
   }
 }
 
 // タスク数を計算して更新する関数
 function updateTaskNumbers(tasks) {
-  console.log('🔢 updateTaskNumbers呼び出し:', tasks);
   const taskCounts = {};
   const earliestDueDates = {};
   
@@ -491,23 +536,17 @@ function updateTaskNumbers(tasks) {
       }
     }
   });
-  
-  console.log('🔢 タスク数集計結果:', taskCounts);
 
   // 時間割の各セルのタスク数を更新
   const cells = document.querySelectorAll('.cell:not(.header):not(.time)');
-  console.log('🔢 処理対象セル数:', cells.length);
   
   cells.forEach((cell, index) => {
     const title = cell.querySelector('.title')?.textContent;
-    console.log(`🔢 セル${index}:`, cell, 'タイトル:', title);
     if (title) {
       const period = cell.getAttribute('data-period');
       const day = cell.getAttribute('data-day');
       const key = `${period}_${day}_${title}`;
       const count = taskCounts[key] || 0;
-      
-      console.log(`🔢 セル処理: ${title} (${period} ${day}) - タスク数: ${count}`);
 
       // 既存の数値表示を削除
       const existingCircle = cell.querySelector('.number-circle');
@@ -517,12 +556,10 @@ function updateTaskNumbers(tasks) {
 
       // タスク数が0より大きい場合のみ表示
       if (count > 0) {
-        console.log(`🔢 タスク数バッジを作成: ${title} - ${count}個`);
         const numberCircle = document.createElement('div');
         numberCircle.className = 'number-circle';
         numberCircle.textContent = count;
-        numberCircle.style.display = 'flex'; // 明示的にdisplayを設定
-        console.log(`🔢 バッジ要素を作成:`, numberCircle);
+        numberCircle.style.display = 'flex';
         
         // 期限に応じて色を設定
         const dueDate = earliestDueDates[key];
@@ -552,7 +589,6 @@ function updateTaskNumbers(tasks) {
           showTaskPopup(period, day, title);
         });
         cell.appendChild(numberCircle);
-        console.log(`🔢 バッジをセルに追加完了: ${title}`, cell);
       }
     }
   });
@@ -622,6 +658,7 @@ function updateTimetableProgressBars() {
             name: subject.name,
             dataId: subject.dataId,
             progress: 0,
+            totalTime: 0,
             lastUpdated: new Date().toISOString()
           };
           subjects.push(s);
@@ -649,6 +686,7 @@ function updateTimetableProgressBars() {
           if (text) {
             text.textContent = `${s.progress || 0}/${denom}`;
           }
+          // 学習時間表示は削除
         }
       } else {
         console.log(`❌ subjectsMasterで見つかりません: ${title} (${period} ${day})`);
@@ -676,6 +714,7 @@ function computeProgressColorClass(pct) {
   return 'pct-4';
 }
 
+// 学習時間関連の機能は削除
 
 // 全体統計を更新する関数
 function updateSummaryStats() {
@@ -684,9 +723,6 @@ function updateSummaryStats() {
   // 全体進捗を計算
   let totalProgress = 0;
   let totalRequired = 0;
-  
-  console.log('📊 updateSummaryStats開始');
-  console.log('📊 subjectsData:', subjects);
   
   getUniqueSubjects().forEach(uniqueSubject => {
     // より柔軟な検索：id、dataId、nameで検索
@@ -699,8 +735,6 @@ function updateSummaryStats() {
     const currentWeek = getCurrentWeekForSubject(uniqueSubject.name);
     const progress = subject ? subject.progress || 0 : 0;
     
-    console.log(`📊 ${uniqueSubject.name}: 進捗=${progress}, 週数=${currentWeek}`);
-    
     totalProgress += progress;
     totalRequired += currentWeek;
   });
@@ -712,8 +746,6 @@ function updateSummaryStats() {
   if (overallProgressEl) {
     overallProgressEl.textContent = `${overallProgressPercent}%`;
   }
-  
-  console.log(`📊 全体進捗更新: ${totalProgress}/${totalRequired} = ${overallProgressPercent}%`);
 }
 
 // 週数表示を更新する関数
@@ -991,8 +1023,6 @@ function formatDueDate(date) {
 
 // タスク一覧ポップアップを表示する関数
 function showTaskPopup(period, day, title) {
-  console.log('🔴 showTaskPopup呼び出し:', period, day, title);
-  
   // 既存のポップアップを削除
   const existingPopup = document.querySelector('.task-popup');
   if (existingPopup) {
@@ -1024,8 +1054,6 @@ function showTaskPopup(period, day, title) {
     )
     .sort(([, a], [, b]) => new Date(a.dueDate) - new Date(b.dueDate));
 
-  console.log('🔴 フィルタリングされたタスク:', tasks);
-
   if (tasks.length === 0) {
     taskList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">タスクがありません</p>';
   } else {
@@ -1038,7 +1066,6 @@ function showTaskPopup(period, day, title) {
   // ポップアップ外クリックで閉じる
   popup.addEventListener('click', (e) => {
     if (e.target === popup) {
-      console.log('🔴 ポップアップ外クリックで閉じます');
       popup.remove();
     }
   });
@@ -1046,7 +1073,6 @@ function showTaskPopup(period, day, title) {
   // ESCキーで閉じる
   const handleEscape = (e) => {
     if (e.key === 'Escape') {
-      console.log('🔴 ESCキーでポップアップを閉じます');
       popup.remove();
       document.removeEventListener('keydown', handleEscape);
     }
@@ -1114,6 +1140,7 @@ function wireEvents() {
         name: modalState.name,
         dataId: modalState.dataId,
         progress: 0,
+        totalTime: 0,
         lastUpdated: new Date().toISOString()
       };
       subjects.push(s);
@@ -1159,6 +1186,7 @@ function wireEvents() {
     }
   });
 
+  // 学習時間関連のイベントリスナーは削除済み
 
   // 課題タイプボタンの切り替え
   document.querySelectorAll('.task-type-btn').forEach(btn => {
@@ -1196,7 +1224,7 @@ function wireEvents() {
 
 }
 
-済み
+// 学習時間関連の機能は削除済み
 
 // 初期化関数
 async function boot() {
@@ -1223,6 +1251,7 @@ async function boot() {
   if (csSubject) {
     console.log('🎯 CS科目データ発見:', csSubject);
     console.log('🎯 CS科目の進捗:', csSubject.progress);
+    console.log('🎯 CS科目の学習時間:', csSubject.totalTime);
   } else {
     console.log('⚠️ CS科目データが見つかりません - 作成します');
     console.log('🔍 全科目データ:', subjectsData?.map(s => ({ name: s.name, dataId: s.dataId, id: s.id })));
@@ -1259,11 +1288,8 @@ async function boot() {
   
   // 少し待ってからUI更新（Firebaseデータの読み込みを待つ）
   setTimeout(() => {
-    console.log('🔄 UI更新開始...');
-    
     // 時間割を再生成して色を更新
     if (window.currentTimetableData) {
-      console.log('🎨 時間割の色を更新中...');
       generateTimetable(window.currentTimetableData);
     }
     
@@ -1273,46 +1299,58 @@ async function boot() {
     
     // タスク数バッジを再表示
     if (window.tasks) {
-      console.log('🔄 boot関数でタスク数バッジを再表示');
       updateTaskNumbers(window.tasks);
     }
     
-    console.log('✅ UI更新完了');
-    
     // CS科目の最終確認
     const finalCSSubject = subjectsData?.find(s => s.name === 'CS' || s.dataId === 'CS');
-    if (finalCSSubject) {
-      console.log('🎯 最終確認 - CS科目データ:', finalCSSubject);
-    } else {
-      console.log('❌ 最終確認 - CS科目データが見つかりません');
-    }
   }, 1000);
   
   // イベントリスナー設定
   wireEvents();
   
-  console.log('🎉 === 初期化完了 ===');
 }
 
 // 時間割の色を強制更新する関数
 function refreshTimetableColors() {
   if (window.currentTimetableData) {
-    console.log('🎨 時間割の色を強制更新中...');
     generateTimetable(window.currentTimetableData);
     updateTimetableProgressBars();
     
     // タスク数バッジを再表示
     if (window.tasks) {
-      console.log('🔄 refreshTimetableColorsでタスク数バッジを再表示');
       updateTaskNumbers(window.tasks);
     }
   }
 }
 
+// テスト用タスクを追加する関数
+function addTestTask() {
+  if (!window.tasks) {
+    window.tasks = {};
+  }
+  
+  const testTask = {
+    period: '1限',
+    day: '木',
+    title: 'CS',
+    content: 'テストタスク',
+    dueDate: '2024-12-31',
+    taskType: '演習課題',
+    completed: false,
+    createdAt: Date.now()
+  };
+  
+  const taskId = 'test-' + Date.now();
+  window.tasks[taskId] = testTask;
+  
+  updateTaskNumbers(window.tasks);
+}
 
 // グローバルに関数を公開
 window.setDate = setDate;
 window.refreshTimetableColors = refreshTimetableColors;
+window.addTestTask = addTestTask;
 
 // DOMContentLoadedで初期化
 document.addEventListener('DOMContentLoaded', boot);
