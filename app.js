@@ -515,6 +515,12 @@ function generateTimetable(timetableData) {
       timetable.appendChild(cell);
     });
   });
+  
+  // 時間割生成後にタスク数バッジを再表示
+  if (window.tasks) {
+    console.log('🔄 時間割生成後にタスク数バッジを再表示');
+    updateTaskNumbers(window.tasks);
+  }
 }
 
 // タスク数を計算して更新する関数
@@ -1320,6 +1326,13 @@ async function boot() {
     updateTimetableProgressBars();
     updateWeekDisplay();
     updateSummaryStats();
+    
+    // タスク数バッジを再表示
+    if (window.tasks) {
+      console.log('🔄 boot関数でタスク数バッジを再表示');
+      updateTaskNumbers(window.tasks);
+    }
+    
     console.log('✅ UI更新完了');
     
     // CS科目の最終確認
@@ -1343,6 +1356,12 @@ function refreshTimetableColors() {
     console.log('🎨 時間割の色を強制更新中...');
     generateTimetable(window.currentTimetableData);
     updateTimetableProgressBars();
+    
+    // タスク数バッジを再表示
+    if (window.tasks) {
+      console.log('🔄 refreshTimetableColorsでタスク数バッジを再表示');
+      updateTaskNumbers(window.tasks);
+    }
   }
 }
 
