@@ -542,8 +542,9 @@ function updateTaskNumbers(tasks) {
   const cells = document.querySelectorAll('.cell:not(.header):not(.time)');
   console.log('🔢 処理対象セル数:', cells.length);
   
-  cells.forEach(cell => {
+  cells.forEach((cell, index) => {
     const title = cell.querySelector('.title')?.textContent;
+    console.log(`🔢 セル${index}:`, cell, 'タイトル:', title);
     if (title) {
       const period = cell.getAttribute('data-period');
       const day = cell.getAttribute('data-day');
@@ -564,6 +565,8 @@ function updateTaskNumbers(tasks) {
         const numberCircle = document.createElement('div');
         numberCircle.className = 'number-circle';
         numberCircle.textContent = count;
+        numberCircle.style.display = 'flex'; // 明示的にdisplayを設定
+        console.log(`🔢 バッジ要素を作成:`, numberCircle);
         
         // 期限に応じて色を設定
         const dueDate = earliestDueDates[key];
@@ -593,6 +596,7 @@ function updateTaskNumbers(tasks) {
           showTaskPopup(period, day, title);
         });
         cell.appendChild(numberCircle);
+        console.log(`🔢 バッジをセルに追加完了: ${title}`, cell);
       }
     }
   });
@@ -1342,9 +1346,34 @@ function refreshTimetableColors() {
   }
 }
 
+// テスト用タスクを追加する関数
+function addTestTask() {
+  if (!window.tasks) {
+    window.tasks = {};
+  }
+  
+  const testTask = {
+    period: '1限',
+    day: '木',
+    title: 'CS',
+    content: 'テストタスク',
+    dueDate: '2024-12-31',
+    taskType: '演習課題',
+    completed: false,
+    createdAt: Date.now()
+  };
+  
+  const taskId = 'test-' + Date.now();
+  window.tasks[taskId] = testTask;
+  
+  console.log('🧪 テストタスクを追加:', testTask);
+  updateTaskNumbers(window.tasks);
+}
+
 // グローバルに関数を公開
 window.setDate = setDate;
 window.refreshTimetableColors = refreshTimetableColors;
+window.addTestTask = addTestTask;
 
 // DOMContentLoadedで初期化
 document.addEventListener('DOMContentLoaded', boot);
