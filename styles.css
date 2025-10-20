@@ -542,51 +542,7 @@ body {
   box-shadow: 0 6px 16px rgba(67, 160, 71, 0.4);
 }
 
-/* 進捗管理セクション (@platformから統合) */
-.progress-display {
-  background: #ffffff;
-  border: 1px solid #E6E8F0;
-  border-radius: 8px;
-  padding: 8px;
-  margin: 8px 0;
-}
-
-.current-progress {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.progress-label {
-  font-size: 12px;
-  color: #596275;
-}
-
-.progress-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: #3b82f6;
-}
-
-.progress-bar-container {
-  height: 6px;
-  background: #F5F5F5;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.modal-progress-bar {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.3s ease, background 0.3s ease;
-}
-
-.modal-progress-bar.pct-0 { background: #d1d5db; }
-.modal-progress-bar.pct-1 { background: linear-gradient(90deg, #ef4444, #f87171); }
-.modal-progress-bar.pct-2 { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-.modal-progress-bar.pct-3 { background: linear-gradient(90deg, #10b981, #34d399); }
-.modal-progress-bar.pct-4 { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+/* 進捗管理セクション (@platformから統合) - プログレスバー部分は削除 */
 
 .action-buttons {
   display: flex;

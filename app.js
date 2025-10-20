@@ -810,7 +810,7 @@ function showTaskModal(period, day, title) {
 // モーダル内タブ切り替え（削除済み）
 // 統合モーダルではタブ機能は不要
 
-// モーダルの進捗を更新
+// モーダルの進捗を更新（プログレスバー部分は削除）
 function updateModalProgress(dataId) {
   if (!dataId) {
     console.log('❌ updateModalProgress: dataIdが空です');
@@ -828,17 +828,6 @@ function updateModalProgress(dataId) {
     const denom = getCurrentWeekForSubject(s.name);
     
     console.log(`📊 進捗更新: ${s.name} - 進捗: ${currentProgress}, 週数: ${denom}`);
-    
-    // 進捗表示を更新
-    document.getElementById('currentProgressDisplay').textContent = `${currentProgress}回`;
-    
-    // プログレスバーを更新
-    const pct = Math.max(0, Math.min(100, Math.floor((denom ? (currentProgress / denom) : 0) * 100)));
-    const bar = document.getElementById('modalProgressBar');
-    bar.style.width = `${pct}%`;
-    bar.className = `modal-progress-bar ${computeProgressColorClass(pct)}`;
-    
-    console.log(`📊 プログレスバー更新: ${pct}%`);
     
     // カスタム入力をリセット
     const customInput = document.getElementById('customTimeInput');

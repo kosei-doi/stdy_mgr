@@ -101,24 +101,14 @@
 
       <!-- 進捗管理セクション -->
       <div class="progress-section">
-        <div class="progress-display">
-          <div class="current-progress">
-            <span class="progress-label">現在の理解度</span>
-            <span id="currentProgressDisplay" class="progress-value">0回</span>
-          </div>
-          <div class="progress-bar-container">
-            <div id="modalProgressBar" class="modal-progress-bar"></div>
-          </div>
+        <div class="action-buttons">
+          <button id="understandBtn" class="btn primary large">
+            理解した！
+          </button>
+          <button id="ununderstandBtn" class="btn secondary large">
+            戻す
+          </button>
         </div>
-
-              <div class="action-buttons">
-                <button id="understandBtn" class="btn primary large">
-                  理解した！
-                </button>
-                <button id="ununderstandBtn" class="btn secondary large">
-                  戻す
-                </button>
-              </div>
 
               <!-- 学習時間セクション削除 -->
               <!-- 元の time-selector-section, time-add-buttons, time-custom-input は削除しました -->
