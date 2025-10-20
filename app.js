@@ -186,7 +186,13 @@ function saveTask(period, day, title, taskData) {
 
 // タスクを読み込む関数（v11対応）
 function loadTasks() {
-  if (!isFirebaseEnabled) return;
+  if (!isFirebaseEnabled) {
+    // Firebaseが無効な場合は空のタスクデータを設定
+    window.tasks = {};
+    displayTasks({});
+    updateTaskNumbers({});
+    return;
+  }
   
   const tasksRef = window.firebase.ref(window.firebase.db, "tabler/tasks");
   window.firebase.onValue(tasksRef, (snapshot) => {
@@ -195,6 +201,11 @@ function loadTasks() {
       window.tasks = data;
       displayTasks(data);
       updateTaskNumbers(data);
+    } else {
+      // データが存在しない場合
+      window.tasks = {};
+      displayTasks({});
+      updateTaskNumbers({});
     }
   });
 }
@@ -508,6 +519,7 @@ function generateTimetable(timetableData) {
 
 // タスク数を計算して更新する関数
 function updateTaskNumbers(tasks) {
+  console.log('🔢 updateTaskNumbers呼び出し:', tasks);
   const taskCounts = {};
   const earliestDueDates = {};
   
@@ -523,9 +535,13 @@ function updateTaskNumbers(tasks) {
       }
     }
   });
+  
+  console.log('🔢 タスク数集計結果:', taskCounts);
 
   // 時間割の各セルのタスク数を更新
   const cells = document.querySelectorAll('.cell:not(.header):not(.time)');
+  console.log('🔢 処理対象セル数:', cells.length);
+  
   cells.forEach(cell => {
     const title = cell.querySelector('.title')?.textContent;
     if (title) {
@@ -533,6 +549,8 @@ function updateTaskNumbers(tasks) {
       const day = cell.getAttribute('data-day');
       const key = `${period}_${day}_${title}`;
       const count = taskCounts[key] || 0;
+      
+      console.log(`🔢 セル処理: ${title} (${period} ${day}) - タスク数: ${count}`);
 
       // 既存の数値表示を削除
       const existingCircle = cell.querySelector('.number-circle');
@@ -542,6 +560,7 @@ function updateTaskNumbers(tasks) {
 
       // タスク数が0より大きい場合のみ表示
       if (count > 0) {
+        console.log(`🔢 タスク数バッジを作成: ${title} - ${count}個`);
         const numberCircle = document.createElement('div');
         numberCircle.className = 'number-circle';
         numberCircle.textContent = count;
