@@ -1021,6 +1021,14 @@ function formatDueDate(date) {
 
 // タスク一覧ポップアップを表示する関数
 function showTaskPopup(period, day, title) {
+  console.log('🔴 showTaskPopup呼び出し:', period, day, title);
+  
+  // 既存のポップアップを削除
+  const existingPopup = document.querySelector('.task-popup');
+  if (existingPopup) {
+    existingPopup.remove();
+  }
+  
   const popup = document.createElement('div');
   popup.className = 'task-popup';
   popup.innerHTML = `
@@ -1046,16 +1054,34 @@ function showTaskPopup(period, day, title) {
     )
     .sort(([, a], [, b]) => new Date(a.dueDate) - new Date(b.dueDate));
 
-  tasks.forEach(([taskId, task]) => {
-    const taskElement = createTaskElement(taskId, task);
-    taskList.appendChild(taskElement);
-  });
+  console.log('🔴 フィルタリングされたタスク:', tasks);
 
+  if (tasks.length === 0) {
+    taskList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">タスクがありません</p>';
+  } else {
+    tasks.forEach(([taskId, task]) => {
+      const taskElement = createTaskElement(taskId, task);
+      taskList.appendChild(taskElement);
+    });
+  }
+
+  // ポップアップ外クリックで閉じる
   popup.addEventListener('click', (e) => {
     if (e.target === popup) {
+      console.log('🔴 ポップアップ外クリックで閉じます');
       popup.remove();
     }
   });
+
+  // ESCキーで閉じる
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      console.log('🔴 ESCキーでポップアップを閉じます');
+      popup.remove();
+      document.removeEventListener('keydown', handleEscape);
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
 }
 
 // イベントリスナー設定

@@ -682,6 +682,59 @@ body {
   padding: 0 20px;
 }
 
+/* タスクポップアップ */
+.task-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: none;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.task-popup-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border: 1px solid #E0E0E0;
+}
+
+.task-popup-header {
+  background: linear-gradient(135deg, #1A237E, #283593);
+  color: white;
+  padding: 16px;
+  border-radius: 12px 12px 0 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.task-popup-header h2 {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.task-popup-header p {
+  margin: 4px 0 0;
+  color: #E8EAF6;
+  font-size: 0.9em;
+}
+
+.task-popup-list {
+  padding: 16px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
 .task-item {
   display: flex;
   align-items: center;
