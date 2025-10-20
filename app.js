@@ -38,53 +38,6 @@ const subjectsMaster = [
   { id: 'fri-5', name: '', dayOfWeek: '金曜日', slot: 5, dataId: 'fri-5' }
 ];
 
-// 科目名マッピング（@tabler → @platform）
-const subjectMapping = {
-  'CS': 'CS',
-  'Cプロ': 'Cプロ',
-  '線形代数': '線形代数',
-  '微分積分': '微分積分',
-  'ALC': 'ALC',
-  '電磁気学A': '電磁気学A',
-  '力学A': '力学A',
-  '生命科学A': '生命科学A',
-  '実験': '実験',
-  '中国語IA': '中国語IA',
-  '憲法IB': '憲法IB',
-  '電生': '電生',
-  '化学': '化学',
-  '科学と芸術': '科学と芸術',
-  '身体論': '身体論',
-  '電基礎': '電基礎'
-};
-
-// ランダムカラー生成関数
-function generateRandomColor() {
-  const colors = [
-    '#E3F2FD', // 水色
-    '#F3E5F5', // ラベンダー
-    '#FFF8E1', // クリーム
-    '#E0F7FA', // ターコイズ
-    '#F1F8E9', // ミントグリーン
-    '#FCE4EC', // ピンク
-    '#EDE7F6', // ライトパープル
-    '#FFF3E0', // アプリコット
-    '#E8F5E9', // セージグリーン
-    '#E1F5FE', // スカイブルー
-    '#E8EAF6', // ライトブルー
-    '#FFF9C4', // イエロー
-    '#FCE4EC', // ローズ
-    '#E8F5E8', // ライム
-    '#F3E5F5', // オーキッド
-    '#E0F2F1', // ティール
-    '#FFF3E0', // オレンジ
-    '#F1F8E9', // グリーン
-    '#E3F2FD', // ブルー
-    '#FCE4EC'  // ピンク
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
-}
-
 // 科目ごとの背景色を定義（薄い色で見やすく）
 const subjectColors = {
   'CS': '#FFE6E8', // コンピュータサイエンス - 薄いピンク
@@ -226,7 +179,6 @@ function loadSubjects() {
           if (data) {
             // Firebaseから読み込んだデータにdataIdフィールドがない場合は科目名を使用
             subjectsData = Object.values(data).map(subject => ({
-              // totalTime を破棄
               id: subject.id || subject.dataId || subject.name,
               name: subject.name,
               dataId: subject.dataId || subject.name || subject.id,
@@ -269,7 +221,6 @@ function loadSubjects() {
         name: s.name, 
         dataId: s.dataId,
         progress: 0, 
-        totalTime: 0, 
         lastUpdated: null 
       }));
       console.log('初期科目データを作成（ローカル）');
@@ -505,7 +456,6 @@ function generateTimetable(timetableData) {
         progressText.id = `text-${period.name}-${day}`;
         cell.appendChild(progressText);
 
-          // 学習時間表示は削除
 
         cell.addEventListener('click', () => {
           showTaskModal(period.name, day, subjectName);
@@ -672,7 +622,6 @@ function updateTimetableProgressBars() {
             name: subject.name,
             dataId: subject.dataId,
             progress: 0,
-            totalTime: 0,
             lastUpdated: new Date().toISOString()
           };
           subjects.push(s);
@@ -700,7 +649,6 @@ function updateTimetableProgressBars() {
           if (text) {
             text.textContent = `${s.progress || 0}/${denom}`;
           }
-          // 学習時間表示は削除
         }
       } else {
         console.log(`❌ subjectsMasterで見つかりません: ${title} (${period} ${day})`);
@@ -728,7 +676,6 @@ function computeProgressColorClass(pct) {
   return 'pct-4';
 }
 
-// 学習時間関連の機能は削除
 
 // 全体統計を更新する関数
 function updateSummaryStats() {
@@ -1167,7 +1114,6 @@ function wireEvents() {
         name: modalState.name,
         dataId: modalState.dataId,
         progress: 0,
-        totalTime: 0,
         lastUpdated: new Date().toISOString()
       };
       subjects.push(s);
@@ -1213,7 +1159,6 @@ function wireEvents() {
     }
   });
 
-  // 学習時間関連のイベントリスナーは削除済み
 
   // 課題タイプボタンの切り替え
   document.querySelectorAll('.task-type-btn').forEach(btn => {
@@ -1251,7 +1196,7 @@ function wireEvents() {
 
 }
 
-// 学習時間関連の機能は削除済み
+済み
 
 // 初期化関数
 async function boot() {
@@ -1278,7 +1223,6 @@ async function boot() {
   if (csSubject) {
     console.log('🎯 CS科目データ発見:', csSubject);
     console.log('🎯 CS科目の進捗:', csSubject.progress);
-    console.log('🎯 CS科目の学習時間:', csSubject.totalTime);
   } else {
     console.log('⚠️ CS科目データが見つかりません - 作成します');
     console.log('🔍 全科目データ:', subjectsData?.map(s => ({ name: s.name, dataId: s.dataId, id: s.id })));
@@ -1365,34 +1309,10 @@ function refreshTimetableColors() {
   }
 }
 
-// テスト用タスクを追加する関数
-function addTestTask() {
-  if (!window.tasks) {
-    window.tasks = {};
-  }
-  
-  const testTask = {
-    period: '1限',
-    day: '木',
-    title: 'CS',
-    content: 'テストタスク',
-    dueDate: '2024-12-31',
-    taskType: '演習課題',
-    completed: false,
-    createdAt: Date.now()
-  };
-  
-  const taskId = 'test-' + Date.now();
-  window.tasks[taskId] = testTask;
-  
-  console.log('🧪 テストタスクを追加:', testTask);
-  updateTaskNumbers(window.tasks);
-}
 
 // グローバルに関数を公開
 window.setDate = setDate;
 window.refreshTimetableColors = refreshTimetableColors;
-window.addTestTask = addTestTask;
 
 // DOMContentLoadedで初期化
 document.addEventListener('DOMContentLoaded', boot);

@@ -147,23 +147,6 @@ body {
   text-align: center;
 }
 
-/* 学習時間表示 (@platformから統合) */
-.study-time {
-  position: absolute;
-  bottom: 3px;
-  right: 3px;
-  font-size: 8px;
-  font-weight: 700;
-  text-align: right;
-  display: block;
-}
-
-/* 学習時間の色分け */
-.time-none { color: #596275; }
-.time-low { color: #92400e; }
-.time-medium { color: #c2410c; }
-.time-high { color: #dc2626; }
-.time-very-high { color: #166534; }
 
 /* タスク数バッジ (@tablerから維持) */
 .number-circle {
@@ -285,21 +268,6 @@ body {
   background: rgba(59, 130, 246, 0.06);
   box-shadow: inset 0 0 0 1px rgba(59,130,246,0.15);
 }
-
-/* 科目ごとの背景色 (@tablerから維持) */
-.subject-colors-cs { background-color: #E3F2FD; }
-.subject-colors-微分積分 { background-color: #F3E5F5; }
-.subject-colors-Cプロ { background-color: #FFF8E1; }
-.subject-colors-実験 { background-color: #E0F7FA; }
-.subject-colors-線形代数 { background-color: #F1F8E9; }
-.subject-colors-中国語IA { background-color: #FCE4EC; }
-.subject-colors-中国語IB { background-color: #FCE4EC; }
-.subject-colors-憲法IB { background-color: #EDE7F6; }
-.subject-colors-電磁気学A { background-color: #FFF3E0; }
-.subject-colors-電生 { background-color: #E8F5E9; }
-.subject-colors-生命科学A { background-color: #E1F5FE; }
-.subject-colors-力学A { background-color: #F3E5F5; }
-.subject-colors-ALC { background-color: #E8EAF6; }
 
 /* タブ (ヘッダー内統合) */
 .tabs {
@@ -599,31 +567,6 @@ body {
   box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
 }
 
-/* 学習時間UIは削除 */
-.time-selector-section { display: none; }
-
-.time-selector-section label { display: none; }
-
-.time-add-buttons { display: none; }
-
-.time-add-btn { display: none; }
-
-.time-add-btn .add-icon { display: none; }
-
-.time-add-btn .add-time { display: none; }
-
-.time-add-btn:hover { display: none; }
-
-.time-add-btn:hover .add-icon,
-.time-add-btn:hover .add-time { display: none; }
-
-.time-custom-input { display: none; }
-
-#customTimeInput { display: none; }
-
-.btn-add-custom { display: none; }
-
-.btn-add-custom:hover { display: none; }
 
 .modal-actions {
   display: flex;
@@ -901,11 +844,6 @@ body {
     font-size: 9px;
   }
 
-  .study-time {
-    font-size: 7px;
-    bottom: 2px;
-    right: 2px;
-  }
 
   .number-circle {
     width: 20px;
@@ -920,10 +858,6 @@ body {
     max-height: 90vh;
   }
 
-  .time-add-buttons {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -972,9 +906,6 @@ body {
     margin-top: 2px;
   }
 
-  .study-time {
-    font-size: 7px;
-  }
 
   .number-circle {
     width: 22px;
@@ -987,9 +918,6 @@ body {
     max-height: 85vh;
   }
 
-  .time-add-buttons {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* タッチフィードバック */
