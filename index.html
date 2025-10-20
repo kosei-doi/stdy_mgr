@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>統合時間割アプリ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  
+  <!-- Firebase SDK (v11 - @tablerから正しく継承) -->
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
+    import {
+      getDatabase,
+      ref,
+      set,
+      onValue,
+      push,
+      get
+    } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyA2M27QaMYPaWK5A1-b2wwvICq5KNcTZt8",
+      authDomain: "planer-275c4.firebaseapp.com",
+      databaseURL: "https://planer-275c4-default-rtdb.firebaseio.com",
+      projectId: "planer-275c4",
+      storageBucket: "planer-275c4.firebasestorage.app",
+      messagingSenderId: "752551364905",
+      appId: "1:752551364905:web:07673595f83cea2c618f38",
+      measurementId: "G-12R593XP3D",
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getDatabase(app);
+
+    // グローバルに公開
+    window.firebase = { app, analytics, db, ref, set, onValue, push, get };
+    console.log('Firebase v11 initialized successfully');
+  </script>
+</head>
+<body>
+  <!-- 統合ヘッダー (統計情報 + タブ) -->
+  <header class="app-header">
+    <div class="header-left">
+      <h1 class="app-title">統合時間割アプリ</h1>
+      <div class="summary-stats">
+        <div class="stat-card">
+          <div class="stat-label">全体進捗</div>
+          <div class="stat-value" id="overallProgress">0%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">現在週</div>
+          <div class="stat-value" id="currentWeekDisplay">第0週</div>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="tabs">
+        <div class="tab active" data-tab="timetable">時間割</div>
+        <div class="tab" data-tab="tasks">タスク</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 時間割タブ -->
+  <div class="tab-content active" id="timetable-tab">
+    <div class="timetable" id="timetable">
+      <!-- 時間割の内容はJavaScriptで生成 -->
+    </div>
+  </div>
+
+  <!-- タスクタブ -->
+  <div class="tab-content" id="tasks-tab">
+    <div class="task-list">
+      <div id="active-tasks">
+        <!-- 未完了タスクはここに表示 -->
+      </div>
+      <div class="completed-tasks">
+        <h3>完了したタスク</h3>
+        <div id="completed-tasks">
+          <!-- 完了タスクはここに表示 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 統合モーダル (タスク管理 + 進捗管理) -->
+  <div id="taskModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">科目管理</h2>
+        <p id="modalSubtitle">タスク追加と進捗管理</p>
+      </div>
+
+      <!-- 進捗管理セクション -->
+      <div class="progress-section">
+        <div class="progress-display">
+          <div class="current-progress">
+            <span class="progress-label">現在の理解度</span>
+            <span id="currentProgressDisplay" class="progress-value">0回</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="modalProgressBar" class="modal-progress-bar"></div>
+          </div>
+        </div>
+
+              <div class="action-buttons">
+                <button id="understandBtn" class="btn primary large">
+                  理解した！
+                </button>
+                <button id="ununderstandBtn" class="btn secondary large">
+                  戻す
+                </button>
+              </div>
+
+              <!-- 学習時間セクション削除 -->
+              <!-- 元の time-selector-section, time-add-buttons, time-custom-input は削除しました -->
+
+      <!-- 区切り線 -->
+      <div class="section-divider"></div>
+
+      <!-- タスク追加セクション -->
+      <div class="task-section">
+        <form id="taskForm">
+          <div class="form-group">
+            <label>課題タイプ</label>
+            <div class="task-type-buttons">
+              <button type="button" class="task-type-btn active" data-type="演習課題">演習課題</button>
+              <button type="button" class="task-type-btn" data-type="予習課題">予習課題</button>
+              <button type="button" class="task-type-btn" data-type="追加演習">追加演習</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="taskContent">内容</label>
+            <input type="text" id="taskContent">
+          </div>
+          <div class="form-group">
+            <label>期限</label>
+            <div class="date-buttons">
+              <button type="button" onclick="setDate('previous')">前日</button>
+              <button type="button" onclick="setDate('current')">当日</button>
+              <button type="button" onclick="setDate('next')">後日</button>
+              <button type="button" onclick="setDate('nextWeek')">次週</button>
+            </div>
+            <input type="date" id="taskDate" required>
+          </div>
+          <button type="submit" class="submit-button">タスク追加</button>
+        </form>
+      </div>
+
+      <div class="modal-actions">
+        <button id="cancelModalBtn" class="btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- スクリプト読み込み -->
+  <script src="data/classDays.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,996 @@
+/* 統合スタイル: @tablerのカラフルなデザインをベースに@platformの要素を統合 */
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background-color: #FAFAFA;
+  color: #263238;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 統合ヘッダー (統計情報 + タブ) */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #E6E8F0;
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  gap: 20px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1A237E;
+  white-space: nowrap;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+
+.summary-stats {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 16px;
+  background: #ffffff;
+  border: 1px solid #E6E8F0;
+  border-radius: 8px;
+  min-width: 120px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #596275;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+/* 時間割 (@tablerのデザインを維持) */
+.timetable {
+  display: grid;
+  grid-template-columns: 80px repeat(5, 1fr);
+  grid-template-rows: 45px repeat(5, 100px);
+  max-width: 1200px;
+  margin: 20px auto;
+  border: 1px solid #E0E0E0;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  animation: scaleIn 0.4s ease-out;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  padding: 6px;
+  flex-direction: column;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cell:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.title {
+  font-weight: bold;
+  margin-bottom: 4px;
+  text-align: center;
+  font-size: 0.9em;
+  line-height: 1.2;
+}
+
+/* 進捗バー (@platformから統合) */
+.progress {
+  height: 4px;
+  background: #E0E0E0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 2px 0;
+  width: 100%;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: #9aa4b2;
+  transition: width 0.2s ease, background 0.2s ease;
+}
+
+/* 進捗バーの色分け */
+.progress-bar.pct-0 { background: #d1d5db; }
+.progress-bar.pct-1 { background: linear-gradient(90deg, #ef4444, #f87171); }
+.progress-bar.pct-2 { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.progress-bar.pct-3 { background: linear-gradient(90deg, #10b981, #34d399); }
+.progress-bar.pct-4 { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+
+.progress-text {
+  font-size: 11px;
+  color: #596275;
+  margin-top: 3px;
+  text-align: center;
+}
+
+/* 学習時間表示 (@platformから統合) */
+.study-time {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  font-size: 8px;
+  font-weight: 700;
+  text-align: right;
+  display: block;
+}
+
+/* 学習時間の色分け */
+.time-none { color: #596275; }
+.time-low { color: #92400e; }
+.time-medium { color: #c2410c; }
+.time-high { color: #dc2626; }
+.time-very-high { color: #166534; }
+
+/* タスク数バッジ (@tablerから維持) */
+.number-circle {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 20px;
+  height: 20px;
+  background-color: #ff4444;
+  border-radius: 50%;
+  color: white;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.number-circle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* 期限による色分け */
+.number-circle.due-date-overdue {
+  background: linear-gradient(135deg, #D32F2F, #B71C1C);
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+}
+
+.number-circle.due-date-today {
+  background: linear-gradient(135deg, #E53935, #C62828);
+  box-shadow: 0 2px 8px rgba(229, 57, 53, 0.3);
+}
+
+.number-circle.due-date-tomorrow {
+  background: linear-gradient(135deg, #FF9800, #F57C00);
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.number-circle.due-date-week {
+  background: linear-gradient(135deg, #1E88E5, #1565C0);
+  box-shadow: 0 2px 8px rgba(30, 136, 229, 0.3);
+}
+
+.number-circle.due-date-future {
+  background: linear-gradient(135deg, #78909C, #546E7A);
+  box-shadow: 0 2px 8px rgba(120, 144, 156, 0.3);
+}
+
+/* ヘッダー (@tablerのカラフルなデザイン) */
+.header {
+  background: linear-gradient(135deg, #1A237E, #283593);
+  color: white;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: shimmer 3s infinite linear;
+}
+
+.current-day-header {
+  background: linear-gradient(135deg, #283593, #303F9F);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.time {
+  background: #F5F5F5;
+  color: #455A64;
+  font-weight: 500;
+  border-right: 2px solid #E0E0E0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100%;
+}
+
+.period-name {
+  font-weight: bold;
+  font-size: 1.0em;
+  margin-bottom: 3px;
+}
+
+.period-time {
+  font-size: 0.75em;
+  color: #666;
+  white-space: nowrap;
+}
+
+.current-day {
+  background-color: #e3f2fd;
+}
+
+.current-period {
+  border: 2px solid #1A237E;
+  box-shadow: 0 0 15px rgba(26, 35, 126, 0.2);
+  background: linear-gradient(135deg, #E8EAF6, #C5CAE9);
+}
+
+.today-col {
+  background: rgba(59, 130, 246, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(59,130,246,0.15);
+}
+
+/* 科目ごとの背景色 (@tablerから維持) */
+.subject-colors-cs { background-color: #E3F2FD; }
+.subject-colors-微分積分 { background-color: #F3E5F5; }
+.subject-colors-Cプロ { background-color: #FFF8E1; }
+.subject-colors-実験 { background-color: #E0F7FA; }
+.subject-colors-線形代数 { background-color: #F1F8E9; }
+.subject-colors-中国語IA { background-color: #FCE4EC; }
+.subject-colors-中国語IB { background-color: #FCE4EC; }
+.subject-colors-憲法IB { background-color: #EDE7F6; }
+.subject-colors-電磁気学A { background-color: #FFF3E0; }
+.subject-colors-電生 { background-color: #E8F5E9; }
+.subject-colors-生命科学A { background-color: #E1F5FE; }
+.subject-colors-力学A { background-color: #F3E5F5; }
+.subject-colors-ALC { background-color: #E8EAF6; }
+
+/* タブ (ヘッダー内統合) */
+.tabs {
+  display: flex;
+  background-color: #F8F9FA;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.tab {
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #455A64;
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.tab.active {
+  background-color: #1A237E;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(26, 35, 126, 0.2);
+}
+
+.tab:hover:not(.active) {
+  background-color: rgba(26, 35, 126, 0.1);
+  color: #1A237E;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* モーダル (@tablerのデザインをベースに拡張) */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 12px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border: 1px solid #E0E0E0;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #1A237E, #283593);
+  color: white;
+  padding: 12px;
+  border-radius: 10px 10px 0 0;
+  margin: -12px -12px 12px -12px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header h2 {
+  color: white;
+  margin: 0;
+  font-size: 1em;
+}
+
+.modal-header p {
+  color: #E8EAF6;
+  margin: 3px 0 0;
+  font-size: 0.85em;
+}
+
+/* 統合モーダルセクション */
+.progress-section {
+  margin-bottom: 12px;
+}
+
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #E0E0E0, transparent);
+  margin: 12px 0;
+  position: relative;
+}
+
+.section-divider::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: linear-gradient(135deg, #1A237E, #283593);
+  border-radius: 2px;
+}
+
+.task-section {
+  margin-top: 12px;
+}
+
+.section-title {
+  font-size: 1em;
+  font-weight: 600;
+  color: #1A237E;
+  margin-bottom: 12px;
+  text-align: center;
+  position: relative;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, #1A237E, #283593);
+  border-radius: 1px;
+}
+
+/* フォーム要素 (@tablerのスタイルを維持) */
+.form-group {
+  margin-bottom: 8px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  color: #333;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group select {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  font-size: 0.9em;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="date"]:focus,
+.form-group select:focus {
+  border-color: #1A237E;
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+  outline: none;
+}
+
+.date-buttons {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.date-buttons button {
+  padding: 4px 8px;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  background-color: #F5F5F5;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #455A64;
+  font-weight: 500;
+  font-size: 0.8em;
+}
+
+.date-buttons button:hover {
+  background-color: #EEEEEE;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.task-type-buttons {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.task-type-btn {
+  flex: 1;
+  padding: 4px;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  background-color: #F5F5F5;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #424242;
+  font-size: 0.8em;
+}
+
+.task-type-btn.active {
+  background-color: #2E7D32;
+  border-color: #2E7D32;
+  color: white;
+  box-shadow: 0 2px 4px rgba(46, 125, 50, 0.2);
+}
+
+.submit-button {
+  width: 100%;
+  padding: 6px;
+  background: linear-gradient(135deg, #43A047, #2E7D32);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  box-shadow: 0 4px 12px rgba(67, 160, 71, 0.3);
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.submit-button:hover {
+  background: linear-gradient(135deg, #2E7D32, #1B5E20);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(67, 160, 71, 0.4);
+}
+
+/* 進捗管理セクション (@platformから統合) */
+.progress-display {
+  background: #ffffff;
+  border: 1px solid #E6E8F0;
+  border-radius: 8px;
+  padding: 8px;
+  margin: 8px 0;
+}
+
+.current-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.progress-label {
+  font-size: 12px;
+  color: #596275;
+}
+
+.progress-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.progress-bar-container {
+  height: 6px;
+  background: #F5F5F5;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.modal-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.modal-progress-bar.pct-0 { background: #d1d5db; }
+.modal-progress-bar.pct-1 { background: linear-gradient(90deg, #ef4444, #f87171); }
+.modal-progress-bar.pct-2 { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.modal-progress-bar.pct-3 { background: linear-gradient(90deg, #10b981, #34d399); }
+.modal-progress-bar.pct-4 { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+
+.action-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.btn {
+  border: 1px solid #E6E8F0;
+  background: transparent;
+  color: #263238;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn.primary {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+.btn.large {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.btn.primary.large {
+  flex: 2; /* 理解ボタンを2倍の幅に */
+}
+
+.btn.secondary.large {
+  flex: 1; /* 戻すボタンは通常の幅 */
+}
+
+.btn.secondary {
+  background: linear-gradient(135deg, #FF6B6B, #E53E3E);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.btn.secondary:hover {
+  background: linear-gradient(135deg, #E53E3E, #C53030);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
+}
+
+/* 学習時間UIは削除 */
+.time-selector-section { display: none; }
+
+.time-selector-section label { display: none; }
+
+.time-add-buttons { display: none; }
+
+.time-add-btn { display: none; }
+
+.time-add-btn .add-icon { display: none; }
+
+.time-add-btn .add-time { display: none; }
+
+.time-add-btn:hover { display: none; }
+
+.time-add-btn:hover .add-icon,
+.time-add-btn:hover .add-time { display: none; }
+
+.time-custom-input { display: none; }
+
+#customTimeInput { display: none; }
+
+.btn-add-custom { display: none; }
+
+.btn-add-custom:hover { display: none; }
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+/* タスク一覧 (@tablerから維持) */
+.task-list {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  background: white;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideUp 0.3s ease-out;
+}
+
+.task-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.task-checkbox {
+  margin-right: 15px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.task-content {
+  flex-grow: 1;
+}
+
+.task-title {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.task-details {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.task-meta {
+  display: flex;
+  gap: 15px;
+  margin-top: 5px;
+  font-size: 0.8em;
+  color: #888;
+}
+
+
+/* 期限の色分け */
+.due-date {
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.due-date-today {
+  background: linear-gradient(135deg, #E53935, #C62828);
+  color: white;
+  font-weight: 500;
+}
+
+.due-date-tomorrow {
+  background: linear-gradient(135deg, #FF9800, #F57C00);
+  color: white;
+  font-weight: 500;
+}
+
+.due-date-week {
+  background: linear-gradient(135deg, #1E88E5, #1565C0);
+  color: white;
+  font-weight: 500;
+}
+
+.due-date-overdue {
+  background: linear-gradient(135deg, #D32F2F, #B71C1C);
+  color: white;
+  font-weight: 500;
+}
+
+.due-date-future {
+  background: linear-gradient(135deg, #78909C, #546E7A);
+  color: white;
+  font-weight: 500;
+}
+
+.completed-tasks {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px solid #eee;
+  background: #F5F5F5;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 40px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.completed-tasks h3 {
+  color: #455A64;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.completed-tasks .task-item {
+  opacity: 0.8;
+  background: #FAFAFA;
+  text-decoration: line-through;
+}
+
+/* アニメーション (@tablerから維持) */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* レスポンシブ対応 (@platformから統合) */
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 8px;
+  }
+
+  .header-left {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .summary-stats {
+    flex-direction: row;
+    width: 100%;
+    gap: 6px;
+    overflow-x: auto;
+  }
+
+  .stat-card {
+    min-width: 90px;
+    padding: 6px 10px;
+    flex-shrink: 0;
+  }
+
+  .header-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tabs {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .timetable {
+    width: 95vw;
+    margin: 10px auto;
+    grid-template-columns: 60px repeat(5, 1fr);
+    grid-template-rows: 35px repeat(5, 80px);
+    max-width: calc(100vw - 20px);
+  }
+
+  .cell {
+    padding: 5px 4px;
+  }
+
+  .title {
+    font-size: 0.75em;
+  }
+
+  .period-name {
+    font-size: 0.9em;
+  }
+
+  .period-time {
+    font-size: 0.7em;
+  }
+
+  .progress {
+    height: 3px;
+  }
+
+  .progress-text {
+    font-size: 9px;
+  }
+
+  .study-time {
+    font-size: 7px;
+    bottom: 2px;
+    right: 2px;
+  }
+
+  .number-circle {
+    width: 16px;
+    height: 16px;
+    font-size: 8px;
+  }
+
+  .modal-content {
+    width: 95%;
+    max-width: 95%;
+    padding: 12px;
+    max-height: 90vh;
+  }
+
+  .time-add-buttons {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .summary-stats {
+    gap: 4px;
+  }
+
+  .stat-card {
+    min-width: 70px;
+    padding: 4px 8px;
+  }
+
+  .timetable {
+    margin: 6px 10px;
+    grid-template-columns: 50px repeat(5, 1fr);
+    grid-template-rows: 40px repeat(5, 110px);
+  }
+
+  .cell {
+    padding: 8px 5px;
+  }
+
+  .title {
+    font-size: 0.7em;
+  }
+
+  .period-name {
+    font-size: 0.8em;
+  }
+
+  .period-time {
+    font-size: 0.6em;
+  }
+
+  .progress {
+    height: 3px;
+  }
+
+  .progress-text {
+    font-size: 8px;
+    margin-top: 2px;
+  }
+
+  .study-time {
+    font-size: 7px;
+  }
+
+  .number-circle {
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
+  }
+
+  .modal-content {
+    padding: 10px;
+    max-height: 85vh;
+  }
+
+  .time-add-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* タッチフィードバック */
+@media (max-width: 1023px) {
+  .cell:active,
+  .task-item:active,
+  .task-type-btn:active,
+  .date-buttons button:active,
+  .submit-button:active,
+  .number-circle:active {
+    transform: scale(0.98);
+    transition: transform 0.1s;
+  }
+}
