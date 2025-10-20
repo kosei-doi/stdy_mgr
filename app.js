@@ -1282,6 +1282,13 @@ async function boot() {
   // 少し待ってからUI更新（Firebaseデータの読み込みを待つ）
   setTimeout(() => {
     console.log('🔄 UI更新開始...');
+    
+    // 時間割を再生成して色を更新
+    if (window.currentTimetableData) {
+      console.log('🎨 時間割の色を更新中...');
+      generateTimetable(window.currentTimetableData);
+    }
+    
     updateTimetableProgressBars();
     updateWeekDisplay();
     updateSummaryStats();
@@ -1302,8 +1309,18 @@ async function boot() {
   console.log('🎉 === 初期化完了 ===');
 }
 
+// 時間割の色を強制更新する関数
+function refreshTimetableColors() {
+  if (window.currentTimetableData) {
+    console.log('🎨 時間割の色を強制更新中...');
+    generateTimetable(window.currentTimetableData);
+    updateTimetableProgressBars();
+  }
+}
+
 // グローバルに関数を公開
 window.setDate = setDate;
+window.refreshTimetableColors = refreshTimetableColors;
 
 // DOMContentLoadedで初期化
 document.addEventListener('DOMContentLoaded', boot);
