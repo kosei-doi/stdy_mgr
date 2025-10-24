@@ -295,43 +295,17 @@ function saveSubjects(subjects) {
   }
 }
 
-// ユニークな科目リストを取得
+// ユニークな科目リストを取得（Firebaseデータベースベース）
 function getUniqueSubjects() {
-  const uniqueSubjects = [];
-  const seenDataIds = new Set();
-  const seenNames = new Set();
+  const subjects = subjectsData || [];
   
-  // subjectsMasterから取得
-  subjectsMaster.forEach(s => {
-    if (!seenDataIds.has(s.dataId) && s.name && s.name.trim() !== '') {
-      seenDataIds.add(s.dataId);
-      seenNames.add(s.name);
-      uniqueSubjects.push({ id: s.dataId, name: s.name, dataId: s.dataId });
-    }
-  });
+  // Firebaseデータベースに実際に存在する科目のみを返す
+  const uniqueSubjects = subjects.map(subject => ({
+    id: subject.id,
+    name: subject.name,
+    dataId: subject.dataId
+  }));
   
-  // 現在の時間割データから動的に科目を追加
-  if (window.currentTimetableData) {
-    window.currentTimetableData.forEach((period, periodIndex) => {
-      period.forEach((subjectName, dayIndex) => {
-        if (subjectName && subjectName.trim() !== '' && !seenNames.has(subjectName)) {
-          // より安全なdataId生成
-          const dataId = `${subjectName.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '-')}`;
-          if (!seenDataIds.has(dataId)) {
-            seenDataIds.add(dataId);
-            seenNames.add(subjectName);
-            uniqueSubjects.push({ id: dataId, name: subjectName, dataId: dataId });
-          }
-        }
-      });
-    });
-  }
-  
-  console.log('=== ユニーク科目リスト ===');
-  console.log('科目数:', uniqueSubjects.length);
-  uniqueSubjects.forEach(subject => {
-    console.log(`- ${subject.name} (${subject.dataId})`);
-  });
   return uniqueSubjects;
 }
 
@@ -378,7 +352,6 @@ function getCurrentWeekForSubject(subjectName, todayISO = getTodayISO()) {
   }
   
   if (!subject) {
-    console.log(`⚠️ 科目が見つかりません: ${subjectName}`);
     return 1;
   }
   
@@ -386,11 +359,6 @@ function getCurrentWeekForSubject(subjectName, todayISO = getTodayISO()) {
   const allDays = getClassDaysByWeekday(subject.dayOfWeek);
   const pastDays = allDays.filter(d => d.date <= todayISO);
   const weekCount = Math.max(pastDays.length, 1);
-  
-  console.log(`📅 ${subjectName} (${subject.dayOfWeek}): ${weekCount}週目`);
-  console.log(`📅 全授業日数: ${allDays.length}, 過去授業日数: ${pastDays.length}`);
-  console.log(`📅 今日: ${todayISO}`);
-  console.log(`📅 過去の授業日:`, pastDays.map(d => d.date));
   
   return weekCount;
 }
@@ -597,8 +565,6 @@ function updateTaskNumbers(tasks) {
 // 時間割の進捗バーを更新する関数
 function updateTimetableProgressBars() {
   const subjects = subjectsData || [];
-  console.log('=== 進捗バー更新 ===');
-  console.log('subjectsData:', subjects);
 
   // 各セルに対して処理
   const cells = document.querySelectorAll('.cell:not(.header):not(.time)');
@@ -638,21 +604,16 @@ function updateTimetableProgressBars() {
         
         // CS科目の特別な検索
         if (!s && title === 'CS') {
-          console.log('🔍 CS科目の特別検索を実行');
           s = subjects.find(sub => 
             sub.name === 'CS' || 
             sub.dataId === 'CS' || 
             sub.id === 'CS' ||
             sub.id === 'mon-1'
           );
-          if (s) {
-            console.log('🎯 CS科目を特別検索で発見:', s);
-          }
         }
         
         if (!s) {
           // 科目データが存在しない場合は作成
-          console.log(`📝 新しい科目データを作成: ${title} (${subject.dataId})`);
           s = {
             id: subject.dataId,
             name: subject.name,
@@ -666,18 +627,11 @@ function updateTimetableProgressBars() {
         }
         
         if (s) {
-          console.log(`✅ 進捗更新: ${title} (${subject.dataId}) - 進捗: ${s.progress}`);
-          console.log(`📊 科目データ詳細:`, s);
-          console.log(`🔍 検索条件: title="${title}", subject.dataId="${subject.dataId}"`);
-          console.log(`🔍 見つかった科目: id="${s.id}", dataId="${s.dataId}", name="${s.name}"`);
           const denom = getCurrentWeekForSubject(s.name);
-          console.log(`📅 週数計算: ${s.name} = ${denom}週`);
           const pct = Math.max(0, Math.min(100, Math.floor((denom ? (s.progress / denom) : 0) * 100)));
-          console.log(`📈 進捗率: ${s.progress}/${denom} = ${pct}%`);
           
           const bar = cell.querySelector('.progress-bar');
           const text = cell.querySelector('.progress-text');
-          const timeDisplay = null;
           
           if (bar) {
             bar.style.width = `${pct}%`;
@@ -686,10 +640,7 @@ function updateTimetableProgressBars() {
           if (text) {
             text.textContent = `${s.progress || 0}/${denom}`;
           }
-          // 学習時間表示は削除
         }
-      } else {
-        console.log(`❌ subjectsMasterで見つかりません: ${title} (${period} ${day})`);
       }
     }
   });
@@ -720,7 +671,7 @@ function computeProgressColorClass(pct) {
 function updateSummaryStats() {
   const subjects = subjectsData || [];
   
-  // 全体進捗を計算
+  // 全体進捗を計算（各科目の進捗と週数を合計）
   let totalProgress = 0;
   let totalRequired = 0;
   
@@ -802,14 +753,12 @@ function showTaskModal(period, day, title) {
   
   // モーダルが表示された後に日付を設定
   setTimeout(() => {
-    console.log('📅 日付設定を実行:', period, day);
     setDate('nextWeek');
   }, 100);
   
   // 進捗管理の進捗を更新（少し遅延させてデータ読み込みを待つ）
   setTimeout(() => {
     if (cellSubject) {
-      console.log('📊 モーダル進捗更新を実行:', cellSubject.dataId);
       updateModalProgress(cellSubject.dataId);
     }
   }, 200);
@@ -826,42 +775,31 @@ function showTaskModal(period, day, title) {
 // モーダルの進捗を更新（プログレスバー部分は削除）
 function updateModalProgress(dataId) {
   if (!dataId) {
-    console.log('❌ updateModalProgress: dataIdが空です');
     return;
   }
   
   const subjects = subjectsData || [];
-  console.log('📊 updateModalProgress: 科目データ検索中', dataId);
-  console.log('📊 利用可能な科目:', subjects.map(s => ({ name: s.name, dataId: s.dataId })));
-  
   const s = subjects.find(x => x.dataId === dataId);
   
   if (s) {
     const currentProgress = s.progress || 0;
     const denom = getCurrentWeekForSubject(s.name);
     
-    console.log(`📊 進捗更新: ${s.name} - 進捗: ${currentProgress}, 週数: ${denom}`);
-    
     // カスタム入力をリセット
     const customInput = document.getElementById('customTimeInput');
     if (customInput) {
       customInput.value = '';
     }
-  } else {
-    console.log('❌ updateModalProgress: 科目データが見つかりません', dataId);
   }
 }
 
 // 日付を設定する関数（@tablerから）
 function setDate(type) {
   const modalSubtitle = document.getElementById('modalSubtitle').textContent;
-  console.log('📅 setDate呼び出し:', type, 'modalSubtitle:', modalSubtitle);
   const [period, day] = modalSubtitle.split(' ');
-  console.log('📅 解析結果:', period, day);
   
   const dayMap = { '月': 1, '火': 2, '水': 3, '木': 4, '金': 5 };
   const subjectDay = dayMap[day];
-  console.log('📅 科目の曜日:', subjectDay);
   
   const today = new Date();
   const jstToday = new Date(today.getTime() + (9 * 60 * 60 * 1000));
@@ -897,8 +835,6 @@ function setDate(type) {
   const date = String(deadline.getDate()).padStart(2, '0');
   const formattedDate = `${year}-${month}-${date}`;
   
-  console.log('📅 計算された日付:', formattedDate);
-  console.log('📅 日付入力フィールドに設定');
   document.getElementById('taskDate').value = formattedDate;
 }
 
@@ -1347,10 +1283,85 @@ function addTestTask() {
   updateTaskNumbers(window.tasks);
 }
 
+// データベースをクリーンアップする関数
+function cleanupDatabase() {
+  if (!isFirebaseEnabled) {
+    console.log('Firebaseが無効なため、ローカルデータをクリーンアップします');
+    if (subjectsData) {
+      // 空のnameを削除し、重複を除去
+      const cleanedData = [];
+      const seenNames = new Set();
+      
+      subjectsData.forEach(subject => {
+        if (subject.name && subject.name.trim() !== '' && !seenNames.has(subject.name)) {
+          seenNames.add(subject.name);
+          cleanedData.push(subject);
+        }
+      });
+      
+      subjectsData = cleanedData;
+      console.log('ローカルデータをクリーンアップしました');
+    }
+    return;
+  }
+  
+  console.log('Firebaseデータベースをクリーンアップ中...');
+  
+  // Firebaseから全科目データを取得
+  const subjectsRef = window.firebase.ref(window.firebase.db, 'subjects');
+  window.firebase.get(subjectsRef)
+    .then((snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const cleanedData = {};
+        const seenNames = new Set();
+        let removedCount = 0;
+        
+        Object.values(data).forEach(subject => {
+          // 空のnameや重複を除去
+          if (subject.name && subject.name.trim() !== '' && !seenNames.has(subject.name)) {
+            seenNames.add(subject.name);
+            // より適切なdataIdを生成
+            const cleanDataId = subject.name.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '-');
+            cleanedData[cleanDataId] = {
+              id: cleanDataId,
+              name: subject.name,
+              dataId: cleanDataId,
+              progress: subject.progress || 0,
+              lastUpdated: subject.lastUpdated || new Date().toISOString()
+            };
+          } else {
+            removedCount++;
+            console.log(`削除対象: ${subject.name || '(空の名前)'}`);
+          }
+        });
+        
+        // クリーンアップされたデータを保存
+        window.firebase.set(subjectsRef, cleanedData)
+          .then(() => {
+            console.log(`${removedCount}個の重複・空エントリを削除しました`);
+            console.log(`残った科目数: ${Object.keys(cleanedData).length}`);
+            // ローカルデータも更新
+            subjectsData = Object.values(cleanedData);
+            // UIを更新
+            updateTimetableProgressBars();
+            updateSummaryStats();
+          })
+          .catch((error) => {
+            console.error('Firebaseへの保存に失敗:', error);
+          });
+      }
+    })
+    .catch((error) => {
+      console.error('Firebaseからの読み込みに失敗:', error);
+    });
+}
+
 // グローバルに関数を公開
 window.setDate = setDate;
 window.refreshTimetableColors = refreshTimetableColors;
 window.addTestTask = addTestTask;
+window.cleanupDatabase = cleanupDatabase;
 
 // DOMContentLoadedで初期化
 document.addEventListener('DOMContentLoaded', boot);
