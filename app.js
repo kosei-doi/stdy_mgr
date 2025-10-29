@@ -473,7 +473,19 @@ function generateTimetable(timetableData) {
         
         cell.appendChild(title);
 
-        // セル内の進捗要素は削除（非表示化）
+        // セル内の進捗要素（バーとテキスト）を生成
+        const progressWrap = document.createElement('div');
+        progressWrap.className = 'progress';
+        const bar = document.createElement('div');
+        bar.className = 'progress-bar';
+        bar.id = `bar-${period.name}-${day}`;
+        progressWrap.appendChild(bar);
+        cell.appendChild(progressWrap);
+
+        const progressText = document.createElement('div');
+        progressText.className = 'progress-text';
+        progressText.id = `text-${period.name}-${day}`;
+        cell.appendChild(progressText);
 
           // 学習時間表示は削除
 
@@ -684,6 +696,26 @@ function updateTimetableProgressBars() {
                 chips.appendChild(chip);
               });
               cell.appendChild(chips);
+            }
+            // 評価表示では進捗UIを隠す
+            const bar = cell.querySelector('.progress-bar');
+            const text = cell.querySelector('.progress-text');
+            if (bar) bar.style.display = 'none';
+            if (text) text.style.display = 'none';
+          } else {
+            // 進捗表示
+            const denom = getCurrentWeekForSubject(s.name);
+            const pct = Math.max(0, Math.min(100, Math.floor((denom ? (s.progress / denom) : 0) * 100)));
+            const bar = cell.querySelector('.progress-bar');
+            const text = cell.querySelector('.progress-text');
+            if (bar) {
+              bar.style.display = '';
+              bar.style.width = `${pct}%`;
+              bar.className = `progress-bar ${computeProgressColorClass(pct)}`;
+            }
+            if (text) {
+              text.style.display = '';
+              text.textContent = `${s.progress || 0}/${denom}`;
             }
           }
         }
