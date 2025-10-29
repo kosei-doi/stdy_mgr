@@ -125,6 +125,8 @@ const initialTimetableData = [
 // グローバル変数
 let subjectsData = null;
 let isFirebaseEnabled = false;
+let displayMode = 'progress'; // 'progress' | 'evaluation'
+let evaluationsData = null;
 let modalState = { name: null, slot: null, dataId: null };
 
 // Firebase接続チェック（v11対応）
@@ -307,6 +309,10 @@ function getUniqueSubjects() {
   }));
   
   return uniqueSubjects;
+}
+function getEvaluationByName(name) {
+  if (!evaluationsData) return null;
+  return (evaluationsData.subjects || []).find(s => (s.displayName || s.subjectId) === name);
 }
 
 // 授業日データを取得
@@ -661,19 +667,43 @@ function updateTimetableProgressBars() {
           saveSubjects(subjects);
         }
         
+        // 既存の評価チップをクリア
+        const existingChips = cell.querySelector('.eval-chips');
+        if (existingChips) existingChips.remove();
+
         if (s) {
-          const denom = getCurrentWeekForSubject(s.name);
-          const pct = Math.max(0, Math.min(100, Math.floor((denom ? (s.progress / denom) : 0) * 100)));
-          
-          const bar = cell.querySelector('.progress-bar');
-          const text = cell.querySelector('.progress-text');
-          
-          if (bar) {
-            bar.style.width = `${pct}%`;
-            bar.className = `progress-bar ${computeProgressColorClass(pct)}`;
-          }
-          if (text) {
-            text.textContent = `${s.progress || 0}/${denom}`;
+          if (displayMode === 'progress') {
+            const denom = getCurrentWeekForSubject(s.name);
+            const pct = Math.max(0, Math.min(100, Math.floor((denom ? (s.progress / denom) : 0) * 100)));
+            const bar = cell.querySelector('.progress-bar');
+            const text = cell.querySelector('.progress-text');
+            if (bar) {
+              bar.style.width = `${pct}%`;
+              bar.className = `progress-bar ${computeProgressColorClass(pct)}`;
+              bar.style.display = '';
+            }
+            if (text) {
+              text.textContent = `${s.progress || 0}/${denom}`;
+              text.style.display = '';
+            }
+          } else {
+            const bar = cell.querySelector('.progress-bar');
+            const text = cell.querySelector('.progress-text');
+            if (bar) bar.style.display = 'none';
+            if (text) text.style.display = 'none';
+            const evalInfo = getEvaluationByName(s.name);
+            if (evalInfo && Array.isArray(evalInfo.components)) {
+              const chips = document.createElement('div');
+              chips.className = 'eval-chips';
+              evalInfo.components.slice(0, 3).forEach(c => {
+                const chip = document.createElement('div');
+                chip.className = 'eval-chip';
+                const weight = c.weightType === 'points' ? `${c.weight}点` : `${c.weight}%`;
+                chip.innerHTML = `${c.type}<span class=\"w\">${weight}</span>`;
+                chips.appendChild(chip);
+              });
+              cell.appendChild(chips);
+            }
           }
         }
       }
@@ -969,6 +999,32 @@ function updateTaskCompletion(taskId, completed) {
     completed: completed,
     completedAt: completed ? Date.now() : null
   });
+
+  if (completed) {
+    playCelebrateAnimation();
+  }
+}
+
+function playCelebrateAnimation() {
+  const container = document.createElement('div');
+  container.className = 'celebrate';
+  const burst = document.createElement('div');
+  burst.className = 'burst';
+  container.appendChild(burst);
+  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+  for (let i = 0; i < 16; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (Math.PI * 2 * i) / 16;
+    const dist = 50 + Math.random() * 30;
+    p.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+    p.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+    p.style.background = colors[i % colors.length];
+    p.style.animationDelay = `${Math.random() * 120}ms`;
+    burst.appendChild(p);
+  }
+  document.body.appendChild(container);
+  setTimeout(() => container.remove(), 900);
 }
 
 // 期限の表示形式を変更する関数
@@ -1069,6 +1125,23 @@ function wireEvents() {
       }
     });
   });
+
+  // 表示モードトグル
+  const modeToggle = document.getElementById('modeToggle');
+  const modeLabel = document.getElementById('modeLabel');
+  if (modeToggle) {
+    modeToggle.addEventListener('change', async () => {
+      displayMode = modeToggle.checked ? 'evaluation' : 'progress';
+      if (modeLabel) modeLabel.textContent = displayMode === 'evaluation' ? '評価表示' : '進捗表示';
+      if (displayMode === 'evaluation' && !evaluationsData) {
+        try {
+          const res = await fetch('data/evaluations.json', { cache: 'no-cache' });
+          if (res.ok) evaluationsData = await res.json();
+        } catch (_) {}
+      }
+      updateTimetableProgressBars();
+    });
+  }
 
   // モーダル内タブ切り替え（削除済み）
   // 統合モーダルではタブ機能は不要

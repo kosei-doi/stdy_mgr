@@ -42,6 +42,40 @@ body {
   align-items: center;
 }
 
+/* Toggle switch */
+.mode-toggle { display: flex; align-items: center; gap: 8px; margin-left: 16px; }
+.mode-label { font-size: 12px; color: #555; }
+.switch { position: relative; display: inline-block; width: 48px; height: 26px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ddd; transition: .3s; border-radius: 999px; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; top: 3px; background: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.switch input:checked + .slider { background: #4CAF50; }
+.switch input:checked + .slider:before { transform: translateX(22px); }
+
+/* Evaluation display inside timetable cells */
+.eval-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.eval-chip { font-size: 10px; line-height: 1; padding: 4px 6px; border-radius: 8px; background: rgba(0,0,0,0.06); color: #333; }
+.eval-chip .w { font-weight: 600; margin-left: 4px; }
+
+/* Evaluations tab cards */
+.evaluations-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 12px; padding: 12px; }
+.evaluation-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+.evaluation-title { margin: 0 0 8px; font-size: 16px; }
+.evaluation-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.eval-item { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+.eval-note { color: #777; font-size: 11px; margin-left: 6px; }
+.eval-total { margin-top: 8px; font-size: 12px; color: #444; }
+
+/* Completion celebration animation */
+.celebrate { position: fixed; left: 50%; top: 20%; transform: translateX(-50%); pointer-events: none; z-index: 9999; }
+.celebrate .burst { position: relative; width: 12px; height: 12px; margin: 0 auto; }
+.celebrate .particle { position: absolute; width: 6px; height: 6px; border-radius: 50%; opacity: 0; animation: pop 700ms ease-out forwards; }
+@keyframes pop {
+  0% { transform: translate(0,0) scale(0.3); opacity: 0; }
+  40% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0; }
+}
+
 
 .summary-stats {
   display: flex;
