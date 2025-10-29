@@ -312,7 +312,19 @@ function getUniqueSubjects() {
 }
 function getEvaluationByName(name) {
   if (!evaluationsData) return null;
-  return (evaluationsData.subjects || []).find(s => (s.displayName || s.subjectId) === name);
+  // 同義マッピング
+  const aliasMap = {
+    '電磁気学A': '電磁気',
+    '電磁気': '電磁気',
+    '電基礎': '電電電気',
+    '電電電気': '電電電気',
+    '力学A': '力学',
+    '力学': '力学'
+  };
+  const key = aliasMap[name] || name;
+  const list = evaluationsData.subjects || [];
+  // displayName 優先 → subjectId でも照合
+  return list.find(s => s.displayName === key || s.subjectId === key) || null;
 }
 
 // 授業日データを取得
