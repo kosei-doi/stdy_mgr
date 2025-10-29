@@ -965,7 +965,10 @@ function createTaskElement(taskId, task) {
   checkbox.className = 'task-checkbox';
   checkbox.checked = task.completed || false;
   checkbox.addEventListener('change', (e) => {
-    const opts = { x: e.clientX, y: e.clientY };
+    const rect = div.getBoundingClientRect();
+    const cx = (e.clientX || (rect.left + rect.width / 2));
+    const cy = (e.clientY || (rect.top + rect.height / 2));
+    const opts = { x: cx, y: cy };
     updateTaskCompletion(taskId, checkbox.checked, opts);
     // 視覚フィードバック
     const item = div;
@@ -1041,11 +1044,12 @@ function updateTaskCompletion(taskId, completed, opts) {
 function playCelebrateAnimation(x, y, palette) {
   const container = document.createElement('div');
   container.className = 'celebrate';
-  if (typeof x === 'number' && typeof y === 'number') {
-    container.style.left = `${x}px`;
-    container.style.top = `${y}px`;
-    container.style.transform = 'translate(-50%, -50%)';
-  }
+  const isNum = (v) => typeof v === 'number' && !Number.isNaN(v);
+  const vx = isNum(x) ? x : (window.innerWidth / 2);
+  const vy = isNum(y) ? y : (window.innerHeight * 0.22);
+  container.style.left = `${vx}px`;
+  container.style.top = `${vy}px`;
+  container.style.transform = 'translate(-50%, -50%)';
   const burst = document.createElement('div');
   burst.className = 'burst';
   container.appendChild(burst);
@@ -1269,8 +1273,11 @@ function wireEvents() {
       updateSummaryStats();
       // モーダルの進捗バーも更新
       updateModalProgress(s.dataId);
-      // お祝い演出（ボタン位置で）
-      playCelebrateAnimation(e.clientX, e.clientY, ['#10b981', '#34d399', '#6ee7b7', '#22c55e']);
+      // お祝い演出（ボタン位置で/フォールバックはボタン中央）
+      const btnRect = understandBtn.getBoundingClientRect();
+      const px = e.clientX || (btnRect.left + btnRect.width / 2);
+      const py = e.clientY || (btnRect.top + btnRect.height / 2);
+      playCelebrateAnimation(px, py, ['#10b981', '#34d399', '#6ee7b7', '#22c55e']);
       document.getElementById('taskModal').style.display = 'none';
       console.log(`✅ ${s.name} の理解度を増加: ${s.progress}回`);
     }
