@@ -65,7 +65,6 @@
       "subjectId": "化学",
       "displayName": "化学",
       "components": [
-        { "type": "試験", "weightType": "percent", "weight": 0 },
         { "type": "レポート", "weightType": "percent", "weight": 90, "note": "学期中に2回提出（第8回・第13回に提示予定）" },
         { "type": "平常点評価", "weightType": "percent", "weight": 10, "note": "簡単な問題演習や意見提出（毎回ではない）" },
         { "type": "その他", "weightType": "percent", "weight": 0 }
