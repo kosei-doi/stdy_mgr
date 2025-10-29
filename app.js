@@ -487,6 +487,41 @@ function generateTimetable(timetableData) {
   }
 }
 
+// 評価情報の読み込みと表示
+let evaluationsLoaded = false;
+async function loadEvaluationsIfNeeded() {
+  if (evaluationsLoaded) return;
+  try {
+    const res = await fetch('data/evaluations.json', { cache: 'no-cache' });
+    if (!res.ok) return;
+    const data = await res.json();
+    renderEvaluations(data);
+    evaluationsLoaded = true;
+  } catch (_) {}
+}
+
+function renderEvaluations(data) {
+  const container = document.getElementById('evaluationsContainer');
+  if (!container || !data || !Array.isArray(data.subjects)) return;
+  const subjects = data.subjects;
+  container.innerHTML = subjects.map(sub => {
+    const comps = (sub.components || []).map(c => {
+      const wt = c.weightType === 'points' ? `${c.weight}点` : `${c.weight}%`;
+      const cnt = c.count ? ` x ${c.count}` : '';
+      const note = c.note ? ` <span class="eval-note">(${c.note})</span>` : '';
+      return `<li class="eval-item"><span class="eval-type">${c.type}${cnt}</span><span class="eval-weight">${wt}</span>${note}</li>`;
+    }).join('');
+    const total = sub.totalPoints ? `<div class="eval-total">合計: ${sub.totalPoints}点</div>` : '';
+    return `
+      <section class="evaluation-card">
+        <h3 class="evaluation-title">${sub.displayName || sub.subjectId}</h3>
+        <ul class="evaluation-list">${comps}</ul>
+        ${total}
+      </section>
+    `;
+  }).join('');
+}
+
 // タスク数を計算して更新する関数
 function updateTaskNumbers(tasks) {
   const taskCounts = {};
@@ -1028,6 +1063,10 @@ function wireEvents() {
         content.classList.remove('active');
       });
       document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+
+      if (tab.dataset.tab === 'evaluations') {
+        loadEvaluationsIfNeeded();
+      }
     });
   });
 
