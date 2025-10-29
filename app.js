@@ -964,10 +964,11 @@ function createTaskElement(taskId, task) {
   checkbox.type = 'checkbox';
   checkbox.className = 'task-checkbox';
   checkbox.checked = task.completed || false;
-  checkbox.addEventListener('change', (e) => {
-    const rect = div.getBoundingClientRect();
-    const cx = (e.clientX || (rect.left + rect.width / 2));
-    const cy = (e.clientY || (rect.top + rect.height / 2));
+  checkbox.addEventListener('change', () => {
+    // チェックボックス自体の中心座標を使用
+    const cbRect = checkbox.getBoundingClientRect();
+    const cx = cbRect.left + cbRect.width / 2;
+    const cy = cbRect.top + cbRect.height / 2;
     const opts = { x: cx, y: cy };
     updateTaskCompletion(taskId, checkbox.checked, opts);
     // 視覚フィードバック
