@@ -461,20 +461,7 @@ function generateTimetable(timetableData) {
         
         cell.appendChild(title);
 
-        // 進捗バーを追加
-        const progressWrap = document.createElement('div');
-        progressWrap.className = 'progress';
-        const bar = document.createElement('div');
-        bar.className = 'progress-bar';
-        bar.id = `bar-${period.name}-${day}`;
-        progressWrap.appendChild(bar);
-        cell.appendChild(progressWrap);
-
-        // 進捗テキストを追加
-        const progressText = document.createElement('div');
-        progressText.className = 'progress-text';
-        progressText.id = `text-${period.name}-${day}`;
-        cell.appendChild(progressText);
+        // セル内の進捗要素は削除（非表示化）
 
           // 学習時間表示は削除
 
@@ -672,25 +659,7 @@ function updateTimetableProgressBars() {
         if (existingChips) existingChips.remove();
 
         if (s) {
-          if (displayMode === 'progress') {
-            const denom = getCurrentWeekForSubject(s.name);
-            const pct = Math.max(0, Math.min(100, Math.floor((denom ? (s.progress / denom) : 0) * 100)));
-            const bar = cell.querySelector('.progress-bar');
-            const text = cell.querySelector('.progress-text');
-            if (bar) {
-              bar.style.width = `${pct}%`;
-              bar.className = `progress-bar ${computeProgressColorClass(pct)}`;
-              bar.style.display = '';
-            }
-            if (text) {
-              text.textContent = `${s.progress || 0}/${denom}`;
-              text.style.display = '';
-            }
-          } else {
-            const bar = cell.querySelector('.progress-bar');
-            const text = cell.querySelector('.progress-text');
-            if (bar) bar.style.display = 'none';
-            if (text) text.style.display = 'none';
+          if (displayMode === 'evaluation') {
             const evalInfo = getEvaluationByName(s.name);
             if (evalInfo && Array.isArray(evalInfo.components)) {
               const chips = document.createElement('div');
