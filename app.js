@@ -682,41 +682,52 @@ function updateTimetableProgressBars() {
         const existingChips = cell.querySelector('.eval-chips');
         if (existingChips) existingChips.remove();
 
-        if (s) {
-          if (displayMode === 'evaluation') {
-            const evalInfo = getEvaluationByName(s.name);
-            if (evalInfo && Array.isArray(evalInfo.components)) {
-              const chips = document.createElement('div');
-              chips.className = 'eval-chips';
-              evalInfo.components.slice(0, 3).forEach(c => {
-                const chip = document.createElement('div');
-                chip.className = 'eval-chip';
-                const weight = c.weightType === 'points' ? `${c.weight}点` : `${c.weight}%`;
-                chip.innerHTML = `${c.type}<span class=\"w\">${weight}</span>`;
-                chips.appendChild(chip);
-              });
-              cell.appendChild(chips);
-            }
-            // 評価表示では進捗UIを隠す
-            const bar = cell.querySelector('.progress-bar');
-            const text = cell.querySelector('.progress-text');
-            if (bar) bar.style.display = 'none';
-            if (text) text.style.display = 'none';
-          } else {
-            // 進捗表示
-            const denom = getCurrentWeekForSubject(s.name);
-            const pct = Math.max(0, Math.min(100, Math.floor((denom ? (s.progress / denom) : 0) * 100)));
-            const bar = cell.querySelector('.progress-bar');
-            const text = cell.querySelector('.progress-text');
-            if (bar) {
-              bar.style.display = '';
-              bar.style.width = `${pct}%`;
-              bar.className = `progress-bar ${computeProgressColorClass(pct)}`;
-            }
-            if (text) {
-              text.style.display = '';
-              text.textContent = `${s.progress || 0}/${denom}`;
-            }
+        const bar = cell.querySelector('.progress-bar');
+        const text = cell.querySelector('.progress-text');
+
+        if (displayMode === 'evaluation') {
+          // 評価表示: プログレスUIは常に非表示
+          if (bar) bar.style.display = 'none';
+          if (text) text.style.display = 'none';
+          // 評価チップをタイトル名（または科目名）で表示
+          const evalName = (s && s.name) ? s.name : title;
+          const evalInfo = getEvaluationByName(evalName);
+          if (evalInfo && Array.isArray(evalInfo.components)) {
+            const chips = document.createElement('div');
+            chips.className = 'eval-chips';
+            evalInfo.components.slice(0, 3).forEach(c => {
+              const chip = document.createElement('div');
+              chip.className = 'eval-chip';
+              const weight = c.weightType === 'points' ? `${c.weight}点` : `${c.weight}%`;
+              chip.innerHTML = `${c.type}<span class=\"w\">${weight}</span>`;
+              chips.appendChild(chip);
+            });
+            cell.appendChild(chips);
+          }
+        } else if (s) {
+          // 進捗表示
+          const denom = getCurrentWeekForSubject(s.name);
+          const pct = Math.max(0, Math.min(100, Math.floor((denom ? (s.progress / denom) : 0) * 100)));
+          if (bar) {
+            bar.style.display = '';
+            bar.style.width = `${pct}%`;
+            bar.className = `progress-bar ${computeProgressColorClass(pct)}`;
+          }
+          if (text) {
+            text.style.display = '';
+            text.textContent = `${s.progress || 0}/${denom}`;
+          }
+        } else {
+          // データなし時の進捗表示: バーとテキストを初期化
+          if (bar) {
+            bar.style.display = '';
+            bar.style.width = `0%`;
+            bar.className = `progress-bar ${computeProgressColorClass(0)}`;
+          }
+          if (text) {
+            const denom = getCurrentWeekForSubject(title);
+            text.style.display = '';
+            text.textContent = `0/${denom}`;
           }
         }
       }
@@ -1146,6 +1157,12 @@ function wireEvents() {
     modeToggle.addEventListener('change', async () => {
       displayMode = modeToggle.checked ? 'evaluation' : 'progress';
       if (modeLabel) modeLabel.textContent = displayMode === 'evaluation' ? '評価表示' : '進捗表示';
+      // Bodyにモードクラスを付与/除去してCSSで強制制御
+      if (displayMode === 'evaluation') {
+        document.body.classList.add('evaluation-mode');
+      } else {
+        document.body.classList.remove('evaluation-mode');
+      }
       if (displayMode === 'evaluation' && !evaluationsData) {
         try {
           const res = await fetch('data/evaluations.json', { cache: 'no-cache' });
@@ -1369,6 +1386,13 @@ async function boot() {
   
   // イベントリスナー設定
   wireEvents();
+
+  // 初期モードのCSSを反映
+  if (displayMode === 'evaluation') {
+    document.body.classList.add('evaluation-mode');
+  } else {
+    document.body.classList.remove('evaluation-mode');
+  }
   
 }
 

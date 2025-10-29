@@ -181,6 +181,12 @@ body {
   text-align: center;
 }
 
+/* 評価表示モードでは進捗UIを強制的に隠す */
+.evaluation-mode .progress,
+.evaluation-mode .progress-text {
+  display: none !important;
+}
+
 /* 学習時間表示 (@platformから統合) */
 .study-time {
   position: absolute;
