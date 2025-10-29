@@ -66,8 +66,7 @@
       "displayName": "化学",
       "components": [
         { "type": "レポート", "weightType": "percent", "weight": 90, "note": "学期中に2回提出（第8回・第13回に提示予定）" },
-        { "type": "平常点評価", "weightType": "percent", "weight": 10, "note": "簡単な問題演習や意見提出（毎回ではない）" },
-        { "type": "その他", "weightType": "percent", "weight": 0 }
+        { "type": "平常点評価", "weightType": "percent", "weight": 10, "note": "簡単な問題演習や意見提出（毎回ではない）" }
       ],
       "notes": [
         "2回目のレポートは第12回授業後～第13回授業前に公開予定（Waseda Moodle）"
