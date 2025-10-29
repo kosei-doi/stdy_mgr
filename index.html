@@ -66,12 +66,10 @@
         <div class="tab active" data-tab="timetable">時間割</div>
         <div class="tab" data-tab="tasks">タスク</div>
       </div>
-      <div class="mode-toggle">
-        <label class="switch">
-          <input type="checkbox" id="modeToggle">
-          <span class="slider"></span>
-        </label>
-        <span class="mode-label" id="modeLabel">進捗表示</span>
+      <div class="segmented-toggle" id="modeSegment">
+        <button type="button" class="seg-btn active" data-mode="progress">進捗</button>
+        <button type="button" class="seg-btn" data-mode="evaluation">評価</button>
+        <span class="seg-indicator"></span>
       </div>
     </div>
   </header>

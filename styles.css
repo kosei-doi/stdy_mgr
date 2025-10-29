@@ -42,15 +42,13 @@ body {
   align-items: center;
 }
 
-/* Toggle switch */
-.mode-toggle { display: flex; align-items: center; gap: 8px; margin-left: 16px; }
-.mode-label { font-size: 12px; color: #555; }
-.switch { position: relative; display: inline-block; width: 48px; height: 26px; }
-.switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ddd; transition: .3s; border-radius: 999px; }
-.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; top: 3px; background: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-.switch input:checked + .slider { background: #4CAF50; }
-.switch input:checked + .slider:before { transform: translateX(22px); }
+/* Segmented toggle */
+.segmented-toggle { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 4px; border-radius: 999px; background: #eef2ff; border: 1px solid #dbe2ff; margin-left: 16px; }
+.segmented-toggle .seg-btn { position: relative; z-index: 1; padding: 6px 14px; font-size: 12px; font-weight: 600; color: #475569; background: transparent; border: 0; border-radius: 999px; cursor: pointer; transition: color .2s ease; }
+.segmented-toggle .seg-btn.active { color: #111827; }
+.segmented-toggle .seg-indicator { position: absolute; top: 4px; bottom: 4px; width: calc(50% - 4px); left: 4px; border-radius: 999px; background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform .25s cubic-bezier(.2,.7,.2,1); }
+.segmented-toggle.evaluation-selected .seg-indicator { transform: translateX(100%); }
+
 
 /* Evaluation display inside timetable cells */
 .eval-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }

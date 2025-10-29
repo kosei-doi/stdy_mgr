@@ -1151,26 +1151,33 @@ function wireEvents() {
   });
 
   // 表示モードトグル
-  const modeToggle = document.getElementById('modeToggle');
-  const modeLabel = document.getElementById('modeLabel');
-  if (modeToggle) {
-    modeToggle.addEventListener('change', async () => {
-      displayMode = modeToggle.checked ? 'evaluation' : 'progress';
-      if (modeLabel) modeLabel.textContent = displayMode === 'evaluation' ? '評価表示' : '進捗表示';
-      // Bodyにモードクラスを付与/除去してCSSで強制制御
-      if (displayMode === 'evaluation') {
+  const modeSegment = document.getElementById('modeSegment');
+  if (modeSegment) {
+    const segButtons = modeSegment.querySelectorAll('.seg-btn');
+    const setMode = async (mode) => {
+      displayMode = mode;
+      // active切り替え
+      segButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+      modeSegment.classList.toggle('evaluation-selected', mode === 'evaluation');
+      // Bodyクラスで強制表示
+      if (mode === 'evaluation') {
         document.body.classList.add('evaluation-mode');
       } else {
         document.body.classList.remove('evaluation-mode');
       }
-      if (displayMode === 'evaluation' && !evaluationsData) {
+      if (mode === 'evaluation' && !evaluationsData) {
         try {
           const res = await fetch('data/evaluations.json', { cache: 'no-cache' });
           if (res.ok) evaluationsData = await res.json();
         } catch (_) {}
       }
       updateTimetableProgressBars();
+    };
+    segButtons.forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
     });
+    // 初期状態反映
+    setMode(displayMode);
   }
 
   // モーダル内タブ切り替え（削除済み）
