@@ -964,8 +964,15 @@ function createTaskElement(taskId, task) {
   checkbox.type = 'checkbox';
   checkbox.className = 'task-checkbox';
   checkbox.checked = task.completed || false;
-  checkbox.addEventListener('change', () => {
-    updateTaskCompletion(taskId, checkbox.checked);
+  checkbox.addEventListener('change', (e) => {
+    const opts = { x: e.clientX, y: e.clientY };
+    updateTaskCompletion(taskId, checkbox.checked, opts);
+    // 視覚フィードバック
+    const item = div;
+    if (checkbox.checked) {
+      item.classList.add('completed-animate');
+      setTimeout(() => item.classList.remove('completed-animate'), 450);
+    }
   });
 
   const content = document.createElement('div');
@@ -1014,7 +1021,7 @@ function createTaskElement(taskId, task) {
 }
 
 // タスクの完了状態を更新する関数
-function updateTaskCompletion(taskId, completed) {
+function updateTaskCompletion(taskId, completed, opts) {
   if (!isFirebaseEnabled) return;
   
   const taskRef = window.firebase.ref(window.firebase.db, `tabler/tasks/${taskId}`);
@@ -1025,30 +1032,51 @@ function updateTaskCompletion(taskId, completed) {
   });
 
   if (completed) {
-    playCelebrateAnimation();
+    const x = opts?.x;
+    const y = opts?.y;
+    playCelebrateAnimation(x, y, ['#3b82f6', '#60a5fa', '#0ea5e9', '#38bdf8']);
   }
 }
 
-function playCelebrateAnimation() {
+function playCelebrateAnimation(x, y, palette) {
   const container = document.createElement('div');
   container.className = 'celebrate';
+  if (typeof x === 'number' && typeof y === 'number') {
+    container.style.left = `${x}px`;
+    container.style.top = `${y}px`;
+    container.style.transform = 'translate(-50%, -50%)';
+  }
   const burst = document.createElement('div');
   burst.className = 'burst';
   container.appendChild(burst);
-  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-  for (let i = 0; i < 16; i++) {
+  const colors = palette || ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+  const count = 18;
+  for (let i = 0; i < count; i++) {
     const p = document.createElement('div');
     p.className = 'particle';
-    const angle = (Math.PI * 2 * i) / 16;
-    const dist = 50 + Math.random() * 30;
+    const angle = (Math.PI * 2 * i) / count;
+    const dist = 56 + Math.random() * 36;
     p.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
     p.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
     p.style.background = colors[i % colors.length];
-    p.style.animationDelay = `${Math.random() * 120}ms`;
+    p.style.animationDelay = `${Math.random() * 140}ms`;
     burst.appendChild(p);
   }
   document.body.appendChild(container);
-  setTimeout(() => container.remove(), 900);
+  setTimeout(() => container.remove(), 950);
+}
+
+function triggerButtonRipple(btn, clientX, clientY) {
+  if (!btn) return;
+  const rect = btn.getBoundingClientRect();
+  const x = (clientX ?? (rect.left + rect.width / 2));
+  const y = (clientY ?? (rect.top + rect.height / 2));
+  const span = document.createElement('span');
+  span.className = 'ripple';
+  span.style.left = `${x - rect.left}px`;
+  span.style.top = `${y - rect.top}px`;
+  btn.appendChild(span);
+  setTimeout(() => span.remove(), 700);
 }
 
 // 期限の表示形式を変更する関数
@@ -1208,7 +1236,9 @@ function wireEvents() {
   });
 
   // 理解したボタン
-  document.getElementById('understandBtn').addEventListener('click', async () => {
+  const understandBtn = document.getElementById('understandBtn');
+  understandBtn.addEventListener('click', async (e) => {
+    triggerButtonRipple(understandBtn, e.clientX, e.clientY);
     const subjects = subjectsData || await loadSubjects();
     // より柔軟な検索：id、dataId、nameで検索
     let s = subjects.find(x => 
@@ -1239,6 +1269,8 @@ function wireEvents() {
       updateSummaryStats();
       // モーダルの進捗バーも更新
       updateModalProgress(s.dataId);
+      // お祝い演出（ボタン位置で）
+      playCelebrateAnimation(e.clientX, e.clientY, ['#10b981', '#34d399', '#6ee7b7', '#22c55e']);
       document.getElementById('taskModal').style.display = 'none';
       console.log(`✅ ${s.name} の理解度を増加: ${s.progress}回`);
     }

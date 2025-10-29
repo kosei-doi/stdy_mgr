@@ -86,6 +86,23 @@ body {
   100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0; }
 }
 
+/* Button ripple effect */
+.btn { position: relative; overflow: hidden; }
+.ripple { position: absolute; border-radius: 9999px; transform: translate(-50%, -50%); pointer-events: none; background: currentColor; opacity: 0.18; width: 8px; height: 8px; animation: ripple-expand 650ms ease-out forwards; }
+@keyframes ripple-expand {
+  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0.3; }
+  60% { opacity: 0.22; }
+  100% { transform: translate(-50%, -50%) scale(18); opacity: 0; }
+}
+
+/* Task item celebrate pulse */
+.task-item.completed-animate { animation: task-pulse 420ms ease-out; }
+@keyframes task-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 rgba(59,130,246,0); }
+  50% { transform: scale(1.015); box-shadow: 0 6px 18px rgba(59,130,246,0.22); }
+  100% { transform: scale(1); box-shadow: 0 0 0 rgba(59,130,246,0); }
+}
+
 
 .summary-stats {
   display: flex;
