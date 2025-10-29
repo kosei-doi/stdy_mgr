@@ -37,6 +37,42 @@ body {
   white-space: nowrap;
 }
 
+/* Brand title enhancement */
+.app-title {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 6px;
+  background: linear-gradient(90deg, #1A237E, #3b82f6, #10b981);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.app-title::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #60a5fa, #1A237E);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+.app-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(26,35,126,0.15), rgba(59,130,246,0.35), rgba(16,185,129,0.25));
+}
+
+@media (max-width: 768px) {
+  .app-title { font-size: 16px; gap: 8px; }
+  .app-title::after { bottom: -4px; height: 2px; }
+}
+
 .header-right {
   display: flex;
   align-items: center;
