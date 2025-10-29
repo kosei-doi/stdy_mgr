@@ -1,0 +1,95 @@
+{
+  "updatedAt": "2025-10-29",
+  "subjects": [
+    {
+      "subjectId": "電磁気学A",
+      "displayName": "電磁気",
+      "components": [
+        { "type": "クイズ", "weightType": "percent", "weight": 60 },
+        { "type": "中間テスト", "weightType": "percent", "weight": 20 },
+        { "type": "期末テスト", "weightType": "percent", "weight": 20 }
+      ]
+    },
+    {
+      "subjectId": "ALC",
+      "displayName": "ALC",
+      "components": [
+        { "type": "Writing Test", "count": 2, "weightType": "points", "weight": 5 },
+        { "type": "Midterm Test", "count": 1, "weightType": "points", "weight": 45 },
+        { "type": "Final Test", "count": 1, "weightType": "points", "weight": 45 }
+      ],
+      "totalPoints": 100
+    },
+    {
+      "subjectId": "力学A",
+      "displayName": "力学",
+      "components": [
+        { "type": "試験", "weightType": "percent", "weight": 70, "note": "第14回目に実施" },
+        { "type": "平常点評価", "weightType": "percent", "weight": 30, "note": "演習課題の解答を総合評価" }
+      ]
+    },
+    {
+      "subjectId": "電電電気",
+      "displayName": "電電電気",
+      "components": [
+        { "type": "試験", "weightType": "percent", "weight": 90 },
+        { "type": "レポート・平常点評価", "weightType": "percent", "weight": 10 }
+      ]
+    },
+    {
+      "subjectId": "身体論",
+      "displayName": "身体論",
+      "components": [
+        { "type": "期末レポート", "weightType": "points", "weight": 30 },
+        { "type": "平常点（出席・各回小課題）", "weightType": "points", "weight": 70, "note": "14×5=70点" }
+      ],
+      "totalPoints": 100
+    },
+    {
+      "subjectId": "科学と芸術",
+      "displayName": "科学と芸術",
+      "components": [
+        { "type": "レポート", "weightType": "percent", "weight": 50, "note": "三人の講師の担当内で課す" },
+        { "type": "平常点評価", "weightType": "percent", "weight": 50, "note": "出席回数を重視" }
+      ]
+    },
+    {
+      "subjectId": "Cプロ",
+      "displayName": "Cプロ",
+      "components": [
+        { "type": "試験", "weightType": "percent", "weight": 70, "note": "理解度の確認" },
+        { "type": "平常点評価", "weightType": "percent", "weight": 30, "note": "毎回の演習・相互評価等" }
+      ]
+    },
+    {
+      "subjectId": "化学",
+      "displayName": "化学",
+      "components": [
+        { "type": "試験", "weightType": "percent", "weight": 0 },
+        { "type": "レポート", "weightType": "percent", "weight": 90, "note": "学期中に2回提出（第8回・第13回に提示予定）" },
+        { "type": "平常点評価", "weightType": "percent", "weight": 10, "note": "簡単な問題演習や意見提出（毎回ではない）" },
+        { "type": "その他", "weightType": "percent", "weight": 0 }
+      ],
+      "notes": [
+        "2回目のレポートは第12回授業後～第13回授業前に公開予定（Waseda Moodle）"
+      ]
+    },
+    {
+      "subjectId": "線形代数",
+      "displayName": "線形代数",
+      "components": [
+        { "type": "試験", "weightType": "percent", "weight": 60, "note": "学期末の試験" },
+        { "type": "平常点評価", "weightType": "percent", "weight": 40, "note": "毎回提出の課題" }
+      ]
+    },
+    {
+      "subjectId": "微分積分",
+      "displayName": "微分積分",
+      "components": [
+        { "type": "試験", "weightType": "percent", "weight": 75, "note": "2回の試験の点数" },
+        { "type": "平常点評価", "weightType": "percent", "weight": 25, "note": "出席状況と授業中の問題解答状況" }
+      ]
+    }
+  ]
+}
+
