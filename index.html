@@ -21,7 +21,8 @@
       set,
       onValue,
       push,
-      get
+      get,
+      remove
     } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
     // Your web app's Firebase configuration
@@ -42,7 +43,7 @@
     const db = getDatabase(app);
 
     // グローバルに公開
-    window.firebase = { app, analytics, db, ref, set, onValue, push, get };
+    window.firebase = { app, analytics, db, ref, set, onValue, push, get, remove };
     console.log('Firebase v11 initialized successfully');
   </script>
 </head>
@@ -130,9 +131,9 @@
           <div class="form-group">
             <label>課題タイプ</label>
             <div class="task-type-buttons">
-              <button type="button" class="task-type-btn active" data-type="演習課題">演習課題</button>
-              <button type="button" class="task-type-btn" data-type="予習課題">予習課題</button>
-              <button type="button" class="task-type-btn" data-type="追加演習">追加演習</button>
+              <button type="button" class="task-type-btn active" data-type="課題">課題</button>
+              <button type="button" class="task-type-btn" data-type="レポート">レポート</button>
+              <button type="button" class="task-type-btn" data-type="テスト">テスト</button>
             </div>
           </div>
           <div class="form-group">

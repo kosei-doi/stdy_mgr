@@ -186,6 +186,38 @@ function saveTask(period, day, title, taskData) {
   });
 }
 
+// 完了タスクの自動削除関数（1ヶ月以上経過した完了タスクを削除）
+function cleanupOldCompletedTasks(tasks) {
+  if (!isFirebaseEnabled || !tasks) return;
+  
+  const now = Date.now();
+  const oneMonthInMs = 30 * 24 * 60 * 60 * 1000; // 30日をミリ秒に変換
+  const tasksToDelete = [];
+  
+  // 削除対象のタスクIDを収集
+  Object.entries(tasks).forEach(([taskId, task]) => {
+    if (task.completed && task.completedAt) {
+      const completedAt = task.completedAt;
+      const ageInMs = now - completedAt;
+      
+      if (ageInMs > oneMonthInMs) {
+        tasksToDelete.push(taskId);
+      }
+    }
+  });
+  
+  // 削除対象のタスクをFirebaseから削除
+  if (tasksToDelete.length > 0) {
+    console.log(`🗑️ ${tasksToDelete.length}個の古い完了タスクを削除中...`);
+    tasksToDelete.forEach(taskId => {
+      const taskRef = window.firebase.ref(window.firebase.db, `tabler/tasks/${taskId}`);
+      window.firebase.remove(taskRef).catch((error) => {
+        console.error(`タスク ${taskId} の削除に失敗:`, error);
+      });
+    });
+  }
+}
+
 // タスクを読み込む関数（v11対応）
 function loadTasks() {
   if (!isFirebaseEnabled) {
@@ -200,6 +232,9 @@ function loadTasks() {
   window.firebase.onValue(tasksRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
+      // 古い完了タスクを自動削除
+      cleanupOldCompletedTasks(data);
+      
       window.tasks = data;
       displayTasks(data);
       updateTaskNumbers(data);
@@ -542,13 +577,33 @@ function renderEvaluations(data) {
 // タスク数を計算して更新する関数
 function updateTaskNumbers(tasks) {
   const taskCounts = {};
+  const taskTypes = {}; // 各科目のタスクタイプを記録
   const earliestDueDates = {};
+  
+  // タスクタイプの優先順位（数値が大きいほど優先度高）
+  const taskTypePriority = {
+    'テスト': 3,
+    'レポート': 2,
+    '課題': 1
+  };
   
   // タスク数を集計（完了していないタスクのみ）
   Object.values(tasks).forEach(task => {
     if (!task.completed) {
       const key = `${task.period}_${task.day}_${task.title}`;
       taskCounts[key] = (taskCounts[key] || 0) + 1;
+      
+      // タスクタイプを記録（優先順位が最も高いものを保持）
+      if (task.taskType && taskTypePriority.hasOwnProperty(task.taskType)) {
+        const currentPriority = taskTypes[key] ? taskTypePriority[taskTypes[key]] : 0;
+        const taskPriority = taskTypePriority[task.taskType];
+        if (taskPriority > currentPriority) {
+          taskTypes[key] = task.taskType;
+        }
+      } else if (!taskTypes[key]) {
+        // タスクタイプが設定されていない場合はデフォルトで'課題'
+        taskTypes[key] = '課題';
+      }
       
       // 最も早い期限を記録
       if (!earliestDueDates[key] || new Date(task.dueDate) < new Date(earliestDueDates[key])) {
@@ -567,6 +622,7 @@ function updateTaskNumbers(tasks) {
       const day = cell.getAttribute('data-day');
       const key = `${period}_${day}_${title}`;
       const count = taskCounts[key] || 0;
+      const priorityType = taskTypes[key] || '課題';
 
       // 既存の数値表示を削除
       const existingCircle = cell.querySelector('.number-circle');
@@ -580,6 +636,16 @@ function updateTaskNumbers(tasks) {
         numberCircle.className = 'number-circle';
         numberCircle.textContent = count;
         numberCircle.style.display = 'flex';
+        
+        // タスクタイプに応じて形状を設定
+        if (priorityType === 'テスト') {
+          numberCircle.classList.add('shape-square');
+        } else if (priorityType === 'レポート') {
+          numberCircle.classList.add('shape-triangle');
+        } else {
+          // 課題はデフォルトの円形
+          numberCircle.classList.add('shape-circle');
+        }
         
         // 期限に応じて色を設定
         const dueDate = earliestDueDates[key];
@@ -855,7 +921,7 @@ function showTaskModal(period, day, title) {
   // フォームをリセット
   document.getElementById('taskForm').reset();
   document.querySelector('.task-type-btn.active').classList.remove('active');
-  document.querySelector('.task-type-btn[data-type="演習課題"]').classList.add('active');
+  document.querySelector('.task-type-btn[data-type="課題"]').classList.add('active');
 }
 
 // モーダル内タブ切り替え（削除済み）
@@ -1033,13 +1099,21 @@ function updateTaskCompletion(taskId, completed, opts) {
     ...window.tasks[taskId],
     completed: completed,
     completedAt: completed ? Date.now() : null
+  }).then(() => {
+    // タスク完了時に古い完了タスクをクリーンアップ
+    if (completed) {
+      // 少し遅延させてからクリーンアップ（現在のタスクの更新を待つ）
+      setTimeout(() => {
+        if (window.tasks) {
+          cleanupOldCompletedTasks(window.tasks);
+        }
+      }, 1000);
+      
+      const x = opts?.x;
+      const y = opts?.y;
+      playCelebrateAnimation(x, y, ['#3b82f6', '#60a5fa', '#0ea5e9', '#38bdf8']);
+    }
   });
-
-  if (completed) {
-    const x = opts?.x;
-    const y = opts?.y;
-    playCelebrateAnimation(x, y, ['#3b82f6', '#60a5fa', '#0ea5e9', '#38bdf8']);
-  }
 }
 
 function playCelebrateAnimation(x, y, palette) {
@@ -1224,7 +1298,7 @@ function wireEvents() {
     const selectedTaskType = document.querySelector('.task-type-btn.active')?.dataset.type;
     
     const taskData = {
-      content: taskContent || (selectedTaskType ? selectedTaskType : '演習課題'),
+      content: taskContent || (selectedTaskType ? selectedTaskType : '課題'),
       dueDate: document.getElementById('taskDate').value,
       taskType: taskContent ? null : selectedTaskType
     };
@@ -1237,7 +1311,7 @@ function wireEvents() {
     
     document.getElementById('taskModal').style.display = 'none';
     this.reset();
-    document.querySelector('[data-type="演習課題"]').classList.add('active');
+    document.querySelector('[data-type="課題"]').classList.add('active');
   });
 
   // 理解したボタン
@@ -1468,7 +1542,7 @@ function addTestTask() {
     title: 'CS',
     content: 'テストタスク',
     dueDate: '2024-12-31',
-    taskType: '演習課題',
+    taskType: '課題',
     completed: false,
     createdAt: Date.now()
   };

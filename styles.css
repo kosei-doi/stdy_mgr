@@ -240,7 +240,6 @@ body {
   width: 24px;
   height: 24px;
   background-color: #ff4444;
-  border-radius: 50%;
   color: white;
   font-size: 12px;
   display: flex;
@@ -250,6 +249,20 @@ body {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 形状の定義 */
+.number-circle.shape-circle {
+  border-radius: 50%;
+}
+
+.number-circle.shape-triangle {
+  border-radius: 0;
+  clip-path: polygon(50% 15%, 15% 85%, 85% 85%);
+}
+
+.number-circle.shape-square {
+  border-radius: 4px;
 }
 
 .number-circle:hover {
