@@ -582,9 +582,9 @@ function updateTaskNumbers(tasks) {
   
   // タスクタイプの優先順位（数値が大きいほど優先度高）
   const taskTypePriority = {
-    'テスト': 3,
+    '課題': 3,
     'レポート': 2,
-    '課題': 1
+    'テスト': 1
   };
   
   // タスク数を集計（完了していないタスクのみ）
@@ -639,9 +639,9 @@ function updateTaskNumbers(tasks) {
         
         // タスクタイプに応じて形状を設定
         if (priorityType === 'テスト') {
-          numberCircle.classList.add('shape-square');
+          numberCircle.classList.add('shape-star');
         } else if (priorityType === 'レポート') {
-          numberCircle.classList.add('shape-triangle');
+          numberCircle.classList.add('shape-square');
         } else {
           // 課題はデフォルトの円形
           numberCircle.classList.add('shape-circle');

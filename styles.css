@@ -237,11 +237,11 @@ body {
   position: absolute;
   top: 3px;
   right: 3px;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   background-color: #ff4444;
   color: white;
-  font-size: 12px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -254,15 +254,20 @@ body {
 /* 形状の定義 */
 .number-circle.shape-circle {
   border-radius: 50%;
-}
-
-.number-circle.shape-triangle {
-  border-radius: 0;
-  clip-path: polygon(50% 15%, 15% 85%, 85% 85%);
+  width: 24px;
+  height: 24px;
 }
 
 .number-circle.shape-square {
   border-radius: 4px;
+  width: 24px;
+  height: 24px;
+}
+
+.number-circle.shape-star {
+  border-radius: 0;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  align-items: center;
 }
 
 .number-circle:hover {
