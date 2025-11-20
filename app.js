@@ -451,7 +451,7 @@ function generateTimetable(timetableData) {
     { name: '1限', time: '8:50-10:30' },
     { name: '2限', time: '10:40-12:20' },
     { name: '3限', time: '13:10-14:50' },
-    { name: '4限', time: '15:50-16:45' },
+    { name: '4限', time: '15:05-16:45' },
     { name: '5限', time: '17:00-18:40' }
   ];
 
