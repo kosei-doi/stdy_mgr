@@ -576,53 +576,80 @@ function renderEvaluations(data) {
 
 // タスク数を計算して更新する関数
 function updateTaskNumbers(tasks) {
-  const taskCounts = {};
-  const taskTypes = {}; // 各科目のタスクタイプを記録
-  const earliestDueDates = {};
+  const taskAggregates = {};
   
-  // タスクタイプの優先順位（数値が大きいほど優先度高）
   const taskTypePriority = {
-    '課題': 3,
-    'レポート': 2,
-    'テスト': 1
+    'Assignment': 3,
+    'Report': 2,
+    'Test': 1
+  };
+
+  const normalizeTaskType = (type) => {
+    const map = {
+      'Assignment': 'Assignment',
+      'assignment': 'Assignment',
+      '課題': 'Assignment',
+      'Report': 'Report',
+      'report': 'Report',
+      'レポート': 'Report',
+      'Test': 'Test',
+      'test': 'Test',
+      'テスト': 'Test'
+    };
+    return map[type] || null;
+  };
+
+  const getDueTime = (dueDate) => {
+    if (!dueDate) return Infinity;
+    const time = new Date(dueDate).getTime();
+    return Number.isNaN(time) ? Infinity : time;
   };
   
-  // タスク数を集計（完了していないタスクのみ）
   Object.values(tasks).forEach(task => {
-    if (!task.completed) {
-      const key = `${task.period}_${task.day}_${task.title}`;
-      taskCounts[key] = (taskCounts[key] || 0) + 1;
-      
-      // タスクタイプを記録（優先順位が最も高いものを保持）
-      if (task.taskType && taskTypePriority.hasOwnProperty(task.taskType)) {
-        const currentPriority = taskTypes[key] ? taskTypePriority[taskTypes[key]] : 0;
-        const taskPriority = taskTypePriority[task.taskType];
-        if (taskPriority > currentPriority) {
-          taskTypes[key] = task.taskType;
-        }
-      } else if (!taskTypes[key]) {
-        // タスクタイプが設定されていない場合はデフォルトで'課題'
-        taskTypes[key] = '課題';
+    if (task.completed) return;
+    
+    const key = `${task.period}_${task.day}_${task.title}`;
+    if (!taskAggregates[key]) {
+      taskAggregates[key] = {
+        count: 0,
+        type: 'Assignment',
+        dueTime: Infinity,
+        dueRaw: null
+      };
+    }
+
+    const aggregate = taskAggregates[key];
+    aggregate.count += 1;
+
+    const normalizedType = normalizeTaskType(task.taskType) || 'Assignment';
+    const taskDueTime = getDueTime(task.dueDate);
+
+    if (taskDueTime < aggregate.dueTime) {
+      aggregate.dueTime = taskDueTime;
+      aggregate.dueRaw = task.dueDate;
+      aggregate.type = normalizedType;
+    } else if (taskDueTime === aggregate.dueTime) {
+      const currentPriority = taskTypePriority[aggregate.type] || 0;
+      const newPriority = taskTypePriority[normalizedType] || 0;
+      if (newPriority > currentPriority) {
+        aggregate.type = normalizedType;
       }
-      
-      // 最も早い期限を記録
-      if (!earliestDueDates[key] || new Date(task.dueDate) < new Date(earliestDueDates[key])) {
-        earliestDueDates[key] = task.dueDate;
-      }
+    } else if (!aggregate.dueRaw) {
+      aggregate.type = normalizedType;
     }
   });
 
-  // 時間割の各セルのタスク数を更新
   const cells = document.querySelectorAll('.cell:not(.header):not(.time)');
   
-  cells.forEach((cell, index) => {
+  cells.forEach(cell => {
     const title = cell.querySelector('.title')?.textContent;
     if (title) {
       const period = cell.getAttribute('data-period');
       const day = cell.getAttribute('data-day');
       const key = `${period}_${day}_${title}`;
-      const count = taskCounts[key] || 0;
-      const priorityType = taskTypes[key] || '課題';
+      const aggregate = taskAggregates[key];
+      const count = aggregate?.count || 0;
+      const priorityType = aggregate?.type || 'Assignment';
 
       // 既存の数値表示を削除
       const existingCircle = cell.querySelector('.number-circle');
@@ -638,17 +665,17 @@ function updateTaskNumbers(tasks) {
         numberCircle.style.display = 'flex';
         
         // タスクタイプに応じて形状を設定
-        if (priorityType === 'テスト') {
+        if (priorityType === 'Test') {
           numberCircle.classList.add('shape-star');
-        } else if (priorityType === 'レポート') {
+        } else if (priorityType === 'Report') {
           numberCircle.classList.add('shape-square');
         } else {
-          // 課題はデフォルトの円形
+          // Assignmentはデフォルトの円形
           numberCircle.classList.add('shape-circle');
         }
         
         // 期限に応じて色を設定
-        const dueDate = earliestDueDates[key];
+        const dueDate = aggregate?.dueRaw;
         if (dueDate) {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
