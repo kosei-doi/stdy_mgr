@@ -225,6 +225,7 @@ function loadTasks() {
     window.tasks = {};
     displayTasks({});
     updateTaskNumbers({});
+    updateWeekDisplay();
     return;
   }
   
@@ -238,11 +239,13 @@ function loadTasks() {
       window.tasks = data;
       displayTasks(data);
       updateTaskNumbers(data);
+      updateWeekDisplay();
     } else {
       // データが存在しない場合
       window.tasks = {};
       displayTasks({});
       updateTaskNumbers({});
+      updateWeekDisplay();
     }
   });
 }
@@ -881,6 +884,12 @@ function updateSummaryStats() {
   }
 }
 
+// 未完了タスク数をカウントする関数
+function countIncompleteTasks(tasks) {
+  if (!tasks) return 0;
+  return Object.values(tasks).filter(task => !task.completed).length;
+}
+
 // 週数表示を更新する関数
 function updateWeekDisplay() {
   const weekdays = ['月曜日','火曜日','水曜日','木曜日','金曜日'];
@@ -895,7 +904,9 @@ function updateWeekDisplay() {
   
   const displayElement = document.getElementById('currentWeekDisplay');
   if (displayElement) {
-    displayElement.textContent = `第${maxWeek}週`;
+    const incompleteCount = countIncompleteTasks(window.tasks);
+    // 週数とタスク数を更新
+    displayElement.innerHTML = `第${maxWeek}週 <span id="incompleteTasksCount" class="task-count-badge">${incompleteCount}</span>`;
   }
 }
 
