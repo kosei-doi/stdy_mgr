@@ -225,7 +225,7 @@ function loadTasks() {
     window.tasks = {};
     displayTasks({});
     updateTaskNumbers({});
-    updateWeekDisplay();
+    updateIncompleteTasksCount({});
     return;
   }
   
@@ -239,13 +239,13 @@ function loadTasks() {
       window.tasks = data;
       displayTasks(data);
       updateTaskNumbers(data);
-      updateWeekDisplay();
+      updateIncompleteTasksCount(data);
     } else {
       // データが存在しない場合
       window.tasks = {};
       displayTasks({});
       updateTaskNumbers({});
-      updateWeekDisplay();
+      updateIncompleteTasksCount({});
     }
   });
 }
@@ -708,6 +708,9 @@ function updateTaskNumbers(tasks) {
       }
     }
   });
+  
+  // 未完了タスク数を更新
+  updateIncompleteTasksCount(tasks);
 }
 
 // 時間割の進捗バーを更新する関数
@@ -884,12 +887,6 @@ function updateSummaryStats() {
   }
 }
 
-// 未完了タスク数をカウントする関数
-function countIncompleteTasks(tasks) {
-  if (!tasks) return 0;
-  return Object.values(tasks).filter(task => !task.completed).length;
-}
-
 // 週数表示を更新する関数
 function updateWeekDisplay() {
   const weekdays = ['月曜日','火曜日','水曜日','木曜日','金曜日'];
@@ -904,9 +901,24 @@ function updateWeekDisplay() {
   
   const displayElement = document.getElementById('currentWeekDisplay');
   if (displayElement) {
-    const incompleteCount = countIncompleteTasks(window.tasks);
-    // 週数とタスク数を更新
-    displayElement.innerHTML = `第${maxWeek}週 <span id="incompleteTasksCount" class="task-count-badge">${incompleteCount}</span>`;
+    displayElement.textContent = `第${maxWeek}週`;
+  }
+}
+
+// 未完了タスク数を更新する関数
+function updateIncompleteTasksCount(tasks) {
+  const tasksData = tasks || window.tasks || {};
+  let incompleteCount = 0;
+  
+  Object.values(tasksData).forEach(task => {
+    if (!task.completed) {
+      incompleteCount++;
+    }
+  });
+  
+  const incompleteTasksEl = document.getElementById('incompleteTasksCount');
+  if (incompleteTasksEl) {
+    incompleteTasksEl.textContent = incompleteCount;
   }
 }
 
@@ -1537,6 +1549,7 @@ async function boot() {
     // タスク数バッジを再表示
     if (window.tasks) {
       updateTaskNumbers(window.tasks);
+      updateIncompleteTasksCount(window.tasks);
     }
     
     // CS科目の最終確認
