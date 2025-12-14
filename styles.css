@@ -514,6 +514,9 @@ body {
 
 .task-section {
   margin-top: 20px;
+  width: 100%;
+  min-width: 100%;
+  display: block;
 }
 
 .section-title {
@@ -819,6 +822,20 @@ body {
     padding: 5px 10px;
     font-size: 12px;
     min-width: 70px;
+  }
+
+  /* 編集ボタンのモバイルスタイル */
+  .task-edit-btn {
+    font-size: 10px;
+    padding: 3px 6px;
+    min-width: auto;
+    white-space: nowrap;
+  }
+
+  .task-meta {
+    gap: 8px;
+    font-size: 0.7em;
+    flex-wrap: wrap;
   }
 }
 
@@ -1128,6 +1145,29 @@ body {
   margin-top: 5px;
   font-size: 0.8em;
   color: #888;
+  align-items: center;
+}
+
+.task-edit-btn {
+  background: transparent;
+  border: 1px solid #E0E0E0;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  color: #666;
+  font-weight: 500;
+}
+
+.task-edit-btn:hover {
+  background: #F5F5F5;
+  border-color: #1A237E;
+  color: #1A237E;
+}
+
+.task-edit-btn:active {
+  transform: scale(0.98);
 }
 
 
@@ -1443,6 +1483,20 @@ body {
     padding: 4px 8px;
     font-size: 11px;
     min-width: 60px;
+  }
+
+  /* 編集ボタンの非常に小さい画面用スタイル */
+  .task-edit-btn {
+    font-size: 9px;
+    padding: 2px 5px;
+    min-width: auto;
+    white-space: nowrap;
+  }
+
+  .task-meta {
+    gap: 6px;
+    font-size: 0.65em;
+    flex-wrap: wrap;
   }
 }
 

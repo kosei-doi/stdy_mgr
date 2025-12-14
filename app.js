@@ -186,6 +186,202 @@ function saveTask(period, day, title, taskData) {
   });
 }
 
+// タスクを更新する関数（v11対応）
+function updateTask(taskId, taskData) {
+  if (!isFirebaseEnabled) {
+    // Firebaseが無効な場合はローカルのみ更新
+    if (window.tasks && window.tasks[taskId]) {
+      window.tasks[taskId] = {
+        ...window.tasks[taskId],
+        ...taskData,
+        updatedAt: Date.now()
+      };
+      displayTasks(window.tasks);
+      updateTaskNumbers(window.tasks);
+      updateIncompleteTasksCount(window.tasks);
+    }
+    return;
+  }
+  
+  const taskRef = window.firebase.ref(window.firebase.db, `tabler/tasks/${taskId}`);
+  const existingTask = window.tasks && window.tasks[taskId] ? window.tasks[taskId] : {};
+  
+  const updatedTask = {
+    ...existingTask,
+    ...taskData,
+    updatedAt: Date.now()
+  };
+  
+  // Firebaseに更新を書き込む
+  window.firebase.set(taskRef, updatedTask).then(() => {
+    // ローカルのタスクデータも更新
+    if (!window.tasks) {
+      window.tasks = {};
+    }
+    window.tasks[taskId] = updatedTask;
+    // UIを更新
+    displayTasks(window.tasks);
+    updateTaskNumbers(window.tasks);
+    updateIncompleteTasksCount(window.tasks);
+    console.log(`✅ タスク ${taskId} を更新しました`);
+  }).catch((error) => {
+    console.error('タスクの更新に失敗しました:', error);
+    alert('タスクの更新に失敗しました。');
+  });
+}
+
+// モーダルを閉じる共通関数
+function closeModal() {
+  const modal = document.getElementById('taskModal');
+  if (modal) {
+    modal.style.display = 'none';
+    // 編集モードをリセット
+    delete modal.dataset.editMode;
+    delete modal.dataset.taskId;
+  }
+}
+
+// モーダルをリセットする関数（追加モード用）
+function resetModalToAddMode() {
+  const modal = document.getElementById('taskModal');
+  const progressSection = document.querySelector('.progress-section');
+  const sectionDivider = document.querySelector('.section-divider');
+  const taskSection = document.getElementById('taskSection');
+  const submitButton = document.getElementById('taskSubmitBtn');
+  
+  // 編集モードをリセット
+  delete modal.dataset.editMode;
+  delete modal.dataset.taskId;
+  
+  // 進捗管理セクションを表示
+  if (progressSection) progressSection.style.display = '';
+  if (sectionDivider) sectionDivider.style.display = '';
+  if (taskSection) taskSection.style.display = 'block';
+  
+  // 送信ボタンのテキストを元に戻す
+  if (submitButton) submitButton.textContent = 'タスク追加';
+  
+  // フォームをリセット
+  const taskForm = document.getElementById('taskForm');
+  if (taskForm) {
+    taskForm.reset();
+    // タスクタイプボタンをリセット
+    document.querySelectorAll('.task-type-btn').forEach(btn => btn.classList.remove('active'));
+    const defaultBtn = document.querySelector('.task-type-btn[data-type="課題"]');
+    if (defaultBtn) defaultBtn.classList.add('active');
+  }
+}
+
+// タスク編集モーダルを表示する関数（showTaskModalと同じロジックを使用）
+function showEditTaskModal(taskId, task) {
+  const modal = document.getElementById('taskModal');
+  
+  // 既にモーダルが開いている場合は一度閉じてから編集モードで開き直す
+  if (modal && modal.style.display === 'block') {
+    closeModal();
+    resetModalToAddMode();
+    // 少し待ってから編集モードで開き直す（アニメーション完了を待つ）
+    setTimeout(() => {
+      showEditTaskModalInternal(taskId, task);
+    }, 200);
+    return;
+  }
+  
+  showEditTaskModalInternal(taskId, task);
+}
+
+// タスク編集モーダルの内部実装
+function showEditTaskModalInternal(taskId, task) {
+  const modal = document.getElementById('taskModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalSubtitle = document.getElementById('modalSubtitle');
+
+  // 編集モードに設定
+  modal.dataset.editMode = 'true';
+  modal.dataset.taskId = taskId;
+
+  // モーダルヘッダーを設定
+  modalTitle.textContent = task.title || 'タスク編集';
+  modalSubtitle.textContent = `${task.period || ''} ${task.day || ''}`;
+  
+  // 進捗管理セクションを非表示
+  const progressSection = document.querySelector('.progress-section');
+  const sectionDivider = document.querySelector('.section-divider');
+  if (progressSection) progressSection.style.display = 'none';
+  if (sectionDivider) sectionDivider.style.display = 'none';
+  
+  // タスクセクションを表示
+  const taskSection = document.getElementById('taskSection');
+  if (taskSection) taskSection.style.display = 'block';
+  
+  // 送信ボタンのテキストを変更
+  const submitButton = document.getElementById('taskSubmitBtn');
+  if (submitButton) submitButton.textContent = 'タスクを更新';
+  
+  // モーダルを表示
+  modal.style.display = 'block';
+
+  // 対応するdataIdを検索（showTaskModalと同じロジック）
+  const slotNum = getSlotNumber(task.period);
+  const dayOfWeek = getDayOfWeek(task.day);
+  let cellSubject = subjectsMaster.find(s => 
+    s.name === task.title && 
+    s.dayOfWeek === dayOfWeek && 
+    s.slot === slotNum
+  );
+  
+  // subjectsMasterに見つからない場合は、動的に作成
+  if (!cellSubject) {
+    // より安全なdataId生成（日本語対応）
+    const dataId = `${task.title.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '-')}`;
+    cellSubject = {
+      id: dataId,
+      name: task.title,
+      dayOfWeek: dayOfWeek,
+      slot: slotNum,
+      dataId: dataId
+    };
+  }
+  
+  modalState = { name: task.title, slot: slotNum, dataId: cellSubject?.dataId };
+  
+  // モーダルが表示された後に日付を設定
+  setTimeout(() => {
+    // 既存の日付を設定
+    const taskDateInput = document.getElementById('taskDate');
+    if (taskDateInput && task.dueDate) {
+      taskDateInput.value = task.dueDate;
+    }
+  }, 100);
+  
+  // 進捗管理の進捗を更新（少し遅延させてデータ読み込みを待つ）
+  setTimeout(() => {
+    if (cellSubject) {
+      updateModalProgress(cellSubject.dataId);
+    }
+  }, 200);
+  
+  // フォームに既存の値を設定
+  const taskContentInput = document.getElementById('taskContent');
+  const taskDateInput = document.getElementById('taskDate');
+  if (taskContentInput) taskContentInput.value = task.content || '';
+  if (taskDateInput && task.dueDate) taskDateInput.value = task.dueDate;
+
+  // タスクタイプボタンを設定
+  document.querySelectorAll('.task-type-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.type === task.taskType) {
+      btn.classList.add('active');
+    }
+  });
+  
+  // デフォルトで「課題」を選択
+  if (!task.taskType) {
+    document.querySelector('.task-type-btn.active')?.classList.remove('active');
+    document.querySelector('.task-type-btn[data-type="課題"]').classList.add('active');
+  }
+}
+
 // 完了タスクの自動削除関数（1ヶ月以上経過した完了タスクを削除）
 function cleanupOldCompletedTasks(tasks) {
   if (!isFirebaseEnabled || !tasks) return;
@@ -424,8 +620,11 @@ function generateTimetable(timetableData) {
   // 現在の時間割データを保存
   window.currentTimetableData = timetableData;
   
+  // 既存の時間割をクリア（重複したイベントリスナーを防ぐ）
   const timetable = document.getElementById('timetable');
-  timetable.innerHTML = '';
+  if (timetable) {
+    timetable.innerHTML = '';
+  }
 
   // ヘッダーを追加
   const days = ['月', '火', '水', '木', '金'];
@@ -931,11 +1130,23 @@ function updateIncompleteTasksCount(tasks) {
 // モーダル表示関数（統合版）
 function showTaskModal(period, day, title) {
   const modal = document.getElementById('taskModal');
+  
+  // 既にモーダルが開いている場合は何もしない（2重で開くのを防ぐ）
+  if (modal && modal.style.display === 'block') {
+    return;
+  }
+  
   const modalTitle = document.getElementById('modalTitle');
   const modalSubtitle = document.getElementById('modalSubtitle');
 
-  modalTitle.textContent = title;
-  modalSubtitle.textContent = `${period} ${day}`; // @tablerの形式に合わせる
+  // モーダルを追加モードにリセット
+  resetModalToAddMode();
+  
+  // モーダルヘッダーを設定
+  if (modalTitle) modalTitle.textContent = title;
+  if (modalSubtitle) modalSubtitle.textContent = `${period} ${day}`;
+  
+  // モーダルを表示
   modal.style.display = 'block';
 
   // 対応するdataIdを検索
@@ -975,9 +1186,13 @@ function showTaskModal(period, day, title) {
   }, 200);
   
   // フォームをリセット
-  document.getElementById('taskForm').reset();
-  document.querySelector('.task-type-btn.active').classList.remove('active');
-  document.querySelector('.task-type-btn[data-type="課題"]').classList.add('active');
+  const taskForm = document.getElementById('taskForm');
+  if (taskForm) {
+    taskForm.reset();
+    document.querySelectorAll('.task-type-btn').forEach(btn => btn.classList.remove('active'));
+    const defaultBtn = document.querySelector('.task-type-btn[data-type="課題"]');
+    if (defaultBtn) defaultBtn.classList.add('active');
+  }
 }
 
 // モーダル内タブ切り替え（削除済み）
@@ -1378,7 +1593,22 @@ function createTaskElement(taskId, task) {
 
   dueDate.textContent = `期限: ${formatDueDate(task.dueDate)}`;
 
+  // 編集ボタンを追加
+  const editBtn = document.createElement('button');
+  editBtn.className = 'task-edit-btn';
+  editBtn.textContent = '編集';
+  editBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // ポップアップがあれば閉じる
+    const existingPopup = document.querySelector('.task-popup');
+    if (existingPopup && existingPopup.closePopup) {
+      existingPopup.closePopup();
+    }
+    showEditTaskModal(taskId, task);
+  });
+
   meta.appendChild(dueDate);
+  meta.appendChild(editBtn);
   content.appendChild(title);
   content.appendChild(details);
   content.appendChild(meta);
@@ -1520,21 +1750,29 @@ function showTaskPopup(period, day, title) {
     });
   }
 
+  // 閉じる関数
+  const closePopup = () => {
+    popup.remove();
+    document.removeEventListener('keydown', handleEscape);
+  };
+
   // ポップアップ外クリックで閉じる
   popup.addEventListener('click', (e) => {
     if (e.target === popup) {
-      popup.remove();
+      closePopup();
     }
   });
 
   // ESCキーで閉じる
   const handleEscape = (e) => {
     if (e.key === 'Escape') {
-      popup.remove();
-      document.removeEventListener('keydown', handleEscape);
+      closePopup();
     }
   };
   document.addEventListener('keydown', handleEscape);
+
+  // 編集ボタンが押されたときにポップアップを閉じるために、グローバルに閉じる関数を保存
+  popup.closePopup = closePopup;
 }
 
 // イベントリスナー設定
@@ -1593,6 +1831,10 @@ function wireEvents() {
   document.getElementById('taskForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
+    const modal = document.getElementById('taskModal');
+    const isEditMode = modal.dataset.editMode === 'true';
+    const taskId = modal.dataset.taskId;
+    
     const taskContent = document.getElementById('taskContent').value;
     const selectedTaskType = document.querySelector('.task-type-btn.active')?.dataset.type;
     
@@ -1602,15 +1844,23 @@ function wireEvents() {
       taskType: taskContent ? null : selectedTaskType
     };
 
-    const modalTitle = document.getElementById('modalTitle').textContent;
-    const modalSubtitle = document.getElementById('modalSubtitle').textContent;
-    const [period, day] = modalSubtitle.split(' ');
+    if (isEditMode && taskId) {
+      // 編集モード
+      updateTask(taskId, taskData);
+    } else {
+      // 追加モード
+      const modalTitle = document.getElementById('modalTitle').textContent;
+      const modalSubtitle = document.getElementById('modalSubtitle').textContent;
+      const [period, day] = modalSubtitle.split(' ');
 
-    saveTask(period, day, modalTitle, taskData);
+      saveTask(period, day, modalTitle, taskData);
+    }
     
-    document.getElementById('taskModal').style.display = 'none';
-    this.reset();
-    document.querySelector('[data-type="課題"]').classList.add('active');
+    // モーダルを閉じる
+    closeModal();
+    
+    // 追加モードにリセット
+    resetModalToAddMode();
   });
 
   // 理解したボタン
@@ -1698,8 +1948,8 @@ function wireEvents() {
   const cancelBtn = document.getElementById('cancelModalBtn');
   if (cancelBtn) {
     cancelBtn.addEventListener('click', () => {
-      console.log('🔴 キャンセルボタンがクリックされました');
-      document.getElementById('taskModal').style.display = 'none';
+      closeModal();
+      resetModalToAddMode();
     });
   }
   
@@ -1707,16 +1957,19 @@ function wireEvents() {
   window.addEventListener('click', function(e) {
     const modal = document.getElementById('taskModal');
     if (e.target === modal) {
-      console.log('🔴 モーダル外クリックで閉じます');
-      modal.style.display = 'none';
+      closeModal();
+      resetModalToAddMode();
     }
   });
 
   // ESCキーでモーダルを閉じる
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      console.log('🔴 ESCキーでモーダルを閉じます');
-      document.getElementById('taskModal').style.display = 'none';
+      const modal = document.getElementById('taskModal');
+      if (modal && modal.style.display === 'block') {
+        closeModal();
+        resetModalToAddMode();
+      }
     }
   });
 

@@ -122,15 +122,16 @@
             戻す
           </button>
         </div>
+      </div>
 
-              <!-- 学習時間セクション削除 -->
-              <!-- 元の time-selector-section, time-add-buttons, time-custom-input は削除しました -->
+      <!-- 学習時間セクション削除 -->
+      <!-- 元の time-selector-section, time-add-buttons, time-custom-input は削除しました -->
 
       <!-- 区切り線 -->
       <div class="section-divider"></div>
 
       <!-- タスク追加セクション -->
-      <div class="task-section">
+      <div class="task-section" id="taskSection">
         <form id="taskForm">
           <div class="form-group">
             <label>課題タイプ</label>
@@ -154,7 +155,7 @@
             </div>
             <input type="date" id="taskDate" required>
           </div>
-          <button type="submit" class="submit-button">タスク追加</button>
+          <button type="submit" class="submit-button" id="taskSubmitBtn">タスク追加</button>
         </form>
       </div>
 
