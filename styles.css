@@ -730,9 +730,96 @@ body {
 
 /* タスク一覧 (@tablerから維持) */
 .task-list {
-  max-width: 800px;
+  max-width: 1400px;
   margin: 20px auto;
   padding: 0 20px;
+}
+
+/* タスクを横並びで表示するグリッド */
+.tasks-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.tasks-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.tasks-section-header {
+  font-size: 15px;
+  font-weight: 700;
+  color: #263238;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #E0E0E0;
+  line-height: 1.2;
+  height: calc(1.2em + 8px);
+  box-sizing: border-box;
+}
+
+/* モバイル表示時も2カラムを維持（gapを小さく） */
+@media (max-width: 768px) {
+  .tasks-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .tasks-section-header,
+  .progress-deficit-section-header {
+    font-size: 13px;
+    font-weight: 700;
+    color: #263238;
+    margin: 0 0 8px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #E0E0E0;
+    line-height: 1.2;
+    height: calc(1.2em + 6px);
+    box-sizing: border-box;
+  }
+
+  .task-item {
+    padding: 14px 12px;
+    margin-bottom: 8px;
+    min-height: 64px;
+    max-height: 64px;
+  }
+
+  /* 進捗不足タスクを中央に表示 */
+  .progress-deficit-task .task-checkbox-spacer {
+    display: none !important;
+  }
+
+  .progress-deficit-task .task-content {
+    flex-grow: 0 !important;
+    width: 100% !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .progress-deficit-task {
+    justify-content: center !important;
+  }
+
+  .progress-deficit-task .task-title {
+    text-align: center !important;
+    width: 100%;
+  }
+
+  .progress-deficit-task .task-details {
+    justify-content: center !important;
+    width: 100%;
+    display: flex !important;
+  }
+
+  .progress-understand-btn,
+  .progress-ununderstand-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+    min-width: 70px;
+  }
 }
 
 /* タスクポップアップ */
@@ -791,18 +878,176 @@ body {
 .task-item {
   display: flex;
   align-items: center;
-  padding: 15px;
+  padding: 18px 15px;
   background: white;
   margin-bottom: 10px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   animation: slideUp 0.3s ease-out;
+  min-height: 70px;
+  max-height: 70px;
+  overflow: hidden;
 }
 
 .task-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 進捗不足タスクのスタイル */
+.progress-deficit-task {
+  background: white;
+}
+
+.task-checkbox-spacer {
+  margin-right: 15px;
+  width: 20px;
+  height: 20px;
+}
+
+.progress-deficit-section-header {
+  font-size: 15px;
+  font-weight: 700;
+  color: #263238;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #E0E0E0;
+  line-height: 1.2;
+  height: calc(1.2em + 8px);
+  box-sizing: border-box;
+}
+
+.task-section-divider {
+  height: 1px;
+  background: #E0E0E0;
+  margin: 16px 0;
+}
+
+.progress-deficit-task .task-details {
+  display: flex;
+  align-items: center;
+  margin-top: 0;
+  color: #666;
+  font-size: 0.9em;
+}
+
+.progress-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.progress-understand-btn {
+  padding: 6px 14px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 13px;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.progress-understand-btn:hover {
+  background: #059669;
+}
+
+.progress-understand-btn:active {
+  background: #047857;
+}
+
+.progress-ununderstand-btn {
+  padding: 6px 14px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 13px;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.progress-ununderstand-btn:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.progress-ununderstand-btn:active:not(:disabled) {
+  background: #b91c1c;
+}
+
+.progress-ununderstand-btn:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* PC表示時の進捗不足タスクの改善 */
+@media (min-width: 769px) {
+  .progress-deficit-task {
+    padding: 18px 15px;
+  }
+
+  .progress-deficit-task .task-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .progress-deficit-task .task-title {
+    font-size: inherit;
+    font-weight: bold;
+    color: inherit;
+    margin-bottom: 0;
+    text-align: center;
+    width: 100%;
+  }
+
+  .progress-deficit-task .progress {
+    width: 100%;
+    max-width: 400px;
+    margin: 0;
+  }
+
+  .progress-deficit-task .task-details {
+    margin-top: 0;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    color: #666;
+    font-size: 0.9em;
+  }
+
+  .progress-buttons {
+    gap: 10px;
+  }
+
+  .progress-understand-btn,
+  .progress-ununderstand-btn {
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 100px;
+  }
+
+  .progress-deficit-section-header {
+    font-size: 15px;
+    font-weight: 700;
+    color: #263238;
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #E0E0E0;
+    line-height: 1.2;
+    height: calc(1.2em + 8px);
+    box-sizing: border-box;
+  }
 }
 
 .task-checkbox {
@@ -815,16 +1060,66 @@ body {
 
 .task-content {
   flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.progress-deficit-task .task-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+}
+
+.progress-deficit-task .progress {
+  width: 100%;
+  margin: 0;
+  max-width: 300px;
+}
+
+.progress-deficit-task .task-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  margin-bottom: 5px;
+  font-weight: bold;
+  text-align: center;
+  width: auto;
+  max-width: 100%;
+}
+
+.progress-deficit-task .task-details {
+  margin-top: 0;
+  width: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .task-title {
   font-weight: bold;
   margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .task-details {
   color: #666;
   font-size: 0.9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .task-meta {
@@ -1089,6 +1384,65 @@ body {
 
   .time-add-buttons {
     grid-template-columns: 1fr;
+  }
+
+  /* 非常に小さい画面でも2カラムを維持（gapをさらに小さく） */
+  .tasks-grid {
+    gap: 8px;
+  }
+
+  .tasks-section-header,
+  .progress-deficit-section-header {
+    font-size: 12px;
+    font-weight: 700;
+    color: #263238;
+    margin: 0 0 6px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #E0E0E0;
+    line-height: 1.2;
+    height: calc(1.2em + 4px);
+    box-sizing: border-box;
+  }
+
+  .task-item {
+    padding: 12px 10px;
+    margin-bottom: 6px;
+    min-height: 60px;
+    max-height: 60px;
+  }
+
+  /* 進捗不足タスクを中央に表示 */
+  .progress-deficit-task .task-checkbox-spacer {
+    display: none !important;
+  }
+
+  .progress-deficit-task .task-content {
+    flex-grow: 0 !important;
+    width: 100% !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .progress-deficit-task {
+    justify-content: center !important;
+  }
+
+  .progress-deficit-task .task-title {
+    text-align: center !important;
+    width: 100%;
+  }
+
+  .progress-deficit-task .task-details {
+    justify-content: center !important;
+    width: 100%;
+    display: flex !important;
+  }
+
+  .progress-understand-btn,
+  .progress-ununderstand-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    min-width: 60px;
   }
 }
 

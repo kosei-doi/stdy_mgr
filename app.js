@@ -910,11 +910,17 @@ function updateIncompleteTasksCount(tasks) {
   const tasksData = tasks || window.tasks || {};
   let incompleteCount = 0;
   
+  // 通常のタスク数をカウント
   Object.values(tasksData).forEach(task => {
     if (!task.completed) {
       incompleteCount++;
     }
   });
+  
+  // 進捗不足の合計数を加算（各教科の不足分を合計）
+  const progressDeficitTasks = generateProgressDeficitTasks();
+  const totalDeficit = progressDeficitTasks.reduce((sum, task) => sum + task.deficit, 0);
+  incompleteCount += totalDeficit;
   
   const incompleteTasksEl = document.getElementById('incompleteTasksCount');
   if (incompleteTasksEl) {
@@ -1043,6 +1049,203 @@ function setDate(type) {
   document.getElementById('taskDate').value = formattedDate;
 }
 
+// 進捗不足タスクを生成する関数
+function generateProgressDeficitTasks() {
+  const progressDeficitTasks = [];
+  const subjects = subjectsData || [];
+  
+  getUniqueSubjects().forEach(uniqueSubject => {
+    // より柔軟な検索：id、dataId、nameで検索
+    const subject = subjects.find(s => 
+      s.id === uniqueSubject.id || 
+      s.dataId === uniqueSubject.dataId || 
+      s.name === uniqueSubject.name
+    );
+    
+    const currentWeek = getCurrentWeekForSubject(uniqueSubject.name);
+    const progress = subject ? subject.progress || 0 : 0;
+    const deficit = currentWeek - progress;
+    
+    // 不足分がある場合のみタスクとして追加
+    if (deficit > 0 && uniqueSubject.name && uniqueSubject.name.trim() !== '') {
+      progressDeficitTasks.push({
+        subjectName: uniqueSubject.name,
+        currentWeek: currentWeek,
+        progress: progress,
+        deficit: deficit
+      });
+    }
+  });
+  
+  // 不足分（deficit）が大きい順にソート
+  progressDeficitTasks.sort((a, b) => b.deficit - a.deficit);
+  
+  return progressDeficitTasks;
+}
+
+// 科目名からdataIdを取得する関数
+function getDataIdFromSubjectName(subjectName) {
+  const subject = subjectsMaster.find(s => s.name === subjectName);
+  if (subject) {
+    return subject.dataId;
+  }
+  // subjectsMasterに見つからない場合は、科目名をそのままdataIdとして使用
+  return subjectName.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '-');
+}
+
+// 進捗を更新する共通関数
+async function updateProgressForSubject(subjectName, increment = 1) {
+  const subjects = subjectsData || await loadSubjects();
+  const dataId = getDataIdFromSubjectName(subjectName);
+  
+  // より柔軟な検索：id、dataId、nameで検索
+  let s = subjects.find(x => 
+    x.dataId === dataId || 
+    x.id === dataId || 
+    x.name === subjectName
+  );
+  
+  if (!s) {
+    // 科目データが存在しない場合は作成
+    console.log(`📝 新しい科目データを作成: ${subjectName} (${dataId})`);
+    s = {
+      id: dataId,
+      name: subjectName,
+      dataId: dataId,
+      progress: 0,
+      totalTime: 0,
+      lastUpdated: new Date().toISOString()
+    };
+    subjects.push(s);
+  }
+  
+  if (s) {
+    const oldProgress = s.progress || 0;
+    const newProgress = Math.max(0, oldProgress + increment);
+    
+    // 進捗が実際に変更されたか確認
+    if (newProgress === oldProgress && increment < 0) {
+      // 進捗が0で減らそうとした場合
+      return false;
+    }
+    
+    s.progress = newProgress;
+    s.lastUpdated = new Date().toISOString();
+    saveSubjects(subjects);
+    updateTimetableProgressBars();
+    updateSummaryStats();
+    // 未完了タスク数を更新（進捗不足タスク数が変わる可能性があるため）
+    if (window.tasks) {
+      updateIncompleteTasksCount(window.tasks);
+    }
+    console.log(`✅ ${s.name} の理解度を更新: ${s.progress}回`);
+    return true;
+  }
+  return false;
+}
+
+// 進捗不足タスク要素を作成する関数
+function createProgressDeficitTaskElement(task) {
+  const div = document.createElement('div');
+  div.className = 'task-item progress-deficit-task';
+  
+  // チェックボックスの代わりにスペーサーを配置
+  const spacer = document.createElement('div');
+  spacer.className = 'task-checkbox-spacer';
+  
+  const content = document.createElement('div');
+  content.className = 'task-content';
+  
+  // タイトル
+  const title = document.createElement('div');
+  title.className = 'task-title';
+  title.textContent = `${task.subjectName} (${task.progress}/${task.currentWeek})`;
+  
+  // 詳細（ボタンを配置）
+  const details = document.createElement('div');
+  details.className = 'task-details';
+  
+  // ボタンコンテナ
+  const buttonContainer = document.createElement('div');
+  buttonContainer.className = 'progress-buttons';
+  
+  // 理解したボタンを追加
+  const understandBtn = document.createElement('button');
+  understandBtn.className = 'btn progress-understand-btn';
+  understandBtn.textContent = '理解した';
+  understandBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    triggerButtonRipple(understandBtn, e.clientX, e.clientY);
+    
+    const success = await updateProgressForSubject(task.subjectName, 1);
+    
+    if (success) {
+      // お祝い演出
+      const btnRect = understandBtn.getBoundingClientRect();
+      const px = e.clientX || (btnRect.left + btnRect.width / 2);
+      const py = e.clientY || (btnRect.top + btnRect.height / 2);
+      playCelebrateAnimation(px, py, ['#10b981', '#34d399', '#6ee7b7', '#22c55e']);
+      
+      // タスク一覧を再表示（進捗が更新されたので不足分も変わる）
+      if (window.tasks) {
+        displayTasks(window.tasks);
+      }
+    }
+  });
+  
+  // 戻すボタンを追加
+  const ununderstandBtn = document.createElement('button');
+  ununderstandBtn.className = 'btn progress-ununderstand-btn';
+  ununderstandBtn.textContent = '戻す';
+  ununderstandBtn.disabled = task.progress === 0;
+  ununderstandBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    triggerButtonRipple(ununderstandBtn, e.clientX, e.clientY);
+    
+    const success = await updateProgressForSubject(task.subjectName, -1);
+    
+    if (success) {
+      // タスク一覧を再表示（進捗が更新されたので不足分も変わる）
+      if (window.tasks) {
+        displayTasks(window.tasks);
+      }
+    } else {
+      alert('理解度は既に0回です。これ以上減らすことはできません。');
+    }
+  });
+  
+  buttonContainer.appendChild(understandBtn);
+  buttonContainer.appendChild(ununderstandBtn);
+  details.appendChild(buttonContainer);
+  
+  // メタ情報（通常のタスクと同じ構造）
+  const meta = document.createElement('div');
+  meta.className = 'task-meta';
+  
+  // プログレスバー
+  const progressWrap = document.createElement('div');
+  progressWrap.className = 'progress';
+  const progressBar = document.createElement('div');
+  progressBar.className = 'progress-bar';
+  
+  // 進捗率を計算
+  const progressPercent = task.currentWeek > 0 ? Math.max(0, Math.min(100, Math.floor((task.progress / task.currentWeek) * 100))) : 0;
+  progressBar.style.width = `${progressPercent}%`;
+  progressBar.className = `progress-bar ${computeProgressColorClass(progressPercent)}`;
+  
+  progressWrap.appendChild(progressBar);
+  
+  content.appendChild(title);
+  content.appendChild(progressWrap);
+  content.appendChild(details);
+  content.appendChild(meta);
+  
+  div.appendChild(spacer);
+  div.appendChild(content);
+  
+  return div;
+}
+
 // タスク一覧を表示する関数（@tablerから）
 function displayTasks(tasks) {
   const activeTasksContainer = document.getElementById('active-tasks');
@@ -1050,17 +1253,63 @@ function displayTasks(tasks) {
   activeTasksContainer.innerHTML = '';
   completedTasksContainer.innerHTML = '';
 
+  // 進捗不足タスクを生成
+  const progressDeficitTasks = generateProgressDeficitTasks();
+  
+  // 通常のタスクを取得
   const sortedTasks = Object.entries(tasks).sort(([, a], [, b]) => {
     return new Date(a.dueDate) - new Date(b.dueDate);
   });
 
-  sortedTasks.forEach(([taskId, task]) => {
-    const taskElement = createTaskElement(taskId, task);
-    if (task.completed) {
-      completedTasksContainer.appendChild(taskElement);
-    } else {
-      activeTasksContainer.appendChild(taskElement);
+  const activeTasks = sortedTasks.filter(([, task]) => !task.completed);
+  const completedTasks = sortedTasks.filter(([, task]) => task.completed);
+
+  // 進捗不足タスクと通常のタスクを横並びで表示するコンテナを作成
+  if (progressDeficitTasks.length > 0 || activeTasks.length > 0) {
+    const tasksGrid = document.createElement('div');
+    tasksGrid.className = 'tasks-grid';
+
+    // 進捗不足タスクのカラム
+    const progressColumn = document.createElement('div');
+    progressColumn.className = 'tasks-column progress-column';
+    
+    if (progressDeficitTasks.length > 0) {
+      const sectionHeader = document.createElement('div');
+      sectionHeader.className = 'progress-deficit-section-header';
+      sectionHeader.textContent = '進捗不足';
+      progressColumn.appendChild(sectionHeader);
+      
+      progressDeficitTasks.forEach(task => {
+        const taskElement = createProgressDeficitTaskElement(task);
+        progressColumn.appendChild(taskElement);
+      });
     }
+
+    // 通常のタスクのカラム
+    const tasksColumn = document.createElement('div');
+    tasksColumn.className = 'tasks-column regular-column';
+    
+    if (activeTasks.length > 0) {
+      const sectionHeader = document.createElement('div');
+      sectionHeader.className = 'tasks-section-header';
+      sectionHeader.textContent = 'タスク';
+      tasksColumn.appendChild(sectionHeader);
+      
+      activeTasks.forEach(([taskId, task]) => {
+        const taskElement = createTaskElement(taskId, task);
+        tasksColumn.appendChild(taskElement);
+      });
+    }
+
+    tasksGrid.appendChild(progressColumn);
+    tasksGrid.appendChild(tasksColumn);
+    activeTasksContainer.appendChild(tasksGrid);
+  }
+
+  // 完了したタスクを表示
+  completedTasks.forEach(([taskId, task]) => {
+    const taskElement = createTaskElement(taskId, task);
+    completedTasksContainer.appendChild(taskElement);
   });
 }
 
