@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS App Icon Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .icon-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .icon-item {
+            text-align: center;
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .icon-size {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        .icon-name {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .status.success { background-color: #d1fae5; color: #065f46; }
+        .status.info { background-color: #dbeafe; color: #1e40af; }
+        .download-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 iOS App Icon Generator</h1>
+        <p>This tool generates all the required icon sizes for iPhone/iPad apps from your SVG icon.</p>
+
+        <div id="status"></div>
+
+        <div class="icon-preview" id="iconPreview">
+            <!-- Icons will be generated here -->
+        </div>
+
+        <div style="text-align: center;">
+            <button onclick="generateIcons()">🎨 Generate iOS Icons</button>
+            <button onclick="downloadAllIcons()" id="downloadBtn" style="display: none;">📦 Download All Icons</button>
+        </div>
+
+        <div class="download-section">
+            <h3>📋 iOS Icon Requirements</h3>
+            <p>The following icon sizes will be generated:</p>
+            <ul>
+                <li><strong>40x40px</strong> - iPhone Notification (iOS 7-11)</li>
+                <li><strong>60x60px</strong> - iPhone App (iOS 7+)</li>
+                <li><strong>76x76px</strong> - iPad App (iOS 7+)</li>
+                <li><strong>83.5x83.5px</strong> - iPad Pro App (iOS 9+)</li>
+                <li><strong>1024x1024px</strong> - App Store</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const iconSizes = [
+            { size: 40, name: 'Icon-40.png', description: 'iPhone Notification' },
+            { size: 60, name: 'Icon-60.png', description: 'iPhone App' },
+            { size: 76, name: 'Icon-76.png', description: 'iPad App' },
+            { size: 84, name: 'Icon-83.5.png', description: 'iPad Pro App' },
+            { size: 1024, name: 'Icon-1024.png', description: 'App Store' }
+        ];
+
+        let generatedIcons = [];
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        async function generateIcons() {
+            showStatus('🎨 Generating icons...', 'info');
+            generatedIcons = [];
+
+            try {
+                // Load the SVG
+                const response = await fetch('icon-app.svg');
+                const svgText = await response.text();
+
+                // Generate each icon size
+                for (const iconSpec of iconSizes) {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // Set canvas size
+                    canvas.width = iconSpec.size;
+                    canvas.height = iconSpec.size;
+
+                    // Create image from SVG
+                    const img = new Image();
+                    const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
+                    const url = URL.createObjectURL(svgBlob);
+
+                    await new Promise((resolve) => {
+                        img.onload = () => {
+                            // Draw the SVG to canvas
+                            ctx.drawImage(img, 0, 0, iconSpec.size, iconSpec.size);
+                            resolve();
+                        };
+                        img.src = url;
+                    });
+
+                    // Convert to PNG
+                    const pngDataUrl = canvas.toDataURL('image/png');
+
+                    // Store the icon
+                    generatedIcons.push({
+                        name: iconSpec.name,
+                        dataUrl: pngDataUrl,
+                        size: iconSpec.size,
+                        description: iconSpec.description
+                    });
+
+                    // Clean up
+                    URL.revokeObjectURL(url);
+                }
+
+                // Display the generated icons
+                displayIcons();
+                showStatus('✅ All icons generated successfully!', 'success');
+
+                // Show download button
+                document.getElementById('downloadBtn').style.display = 'inline-block';
+
+            } catch (error) {
+                showStatus(`❌ Error generating icons: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        function displayIcons() {
+            const previewDiv = document.getElementById('iconPreview');
+            previewDiv.innerHTML = '';
+
+            generatedIcons.forEach(icon => {
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'icon-item';
+
+                iconDiv.innerHTML = `
+                    <div class="icon-name">${icon.name}</div>
+                    <img src="${icon.dataUrl}" alt="${icon.name}" style="width: 80px; height: 80px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div class="icon-size">${icon.size}x${icon.size}px<br>${icon.description}</div>
+                `;
+
+                previewDiv.appendChild(iconDiv);
+            });
+        }
+
+        function downloadAllIcons() {
+            generatedIcons.forEach(icon => {
+                const link = document.createElement('a');
+                link.download = icon.name;
+                link.href = icon.dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            showStatus('📦 All icons downloaded!', 'success');
+        }
+
+        // Initialize
+        showStatus('Click "Generate iOS Icons" to create all required icon sizes.', 'info');
+    </script>
+</body>
+</html>
