@@ -1,22 +1,22 @@
 // Firebase設定ファイル
 // 統合アプリでは両方のFirebaseプロジェクトに接続可能
 
-// @tabler用のFirebase設定
+// @tabler用のFirebase設定 - 更新済み: 新しいデータベースを使用
 const firebaseConfig = {
-  apiKey: "AIzaSyA2M27QaMYPaWK5A1-b2wwvICq5KNcTZt8",
-  authDomain: "planer-275c4.firebaseapp.com",
-  databaseURL: "https://planer-275c4-default-rtdb.firebaseio.com",
-  projectId: "planer-275c4",
-  storageBucket: "planer-275c4.firebasestorage.app",
-  messagingSenderId: "752551364905",
-  appId: "1:752551364905:web:07673595f83cea2c618f38",
-  measurementId: "G-12R593XP3D",
+  apiKey: "AIzaSyDhYTiWflm90SZTySJMDlBpGu7WHzkUaL4",
+  authDomain: "manager-8ac68.firebaseapp.com",
+  databaseURL: "https://manager-8ac68-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "manager-8ac68",
+  storageBucket: "manager-8ac68.firebasestorage.app",
+  messagingSenderId: "978586727124",
+  appId: "1:978586727124:web:34e5fe89cc51f35b37c141",
+  measurementId: "G-XPC0DXSBNZ"
 };
 
 // Firebase初期化
 if (typeof firebase !== 'undefined') {
   firebase.initializeApp(firebaseConfig);
-  console.log('Firebase initialized successfully');
+  console.log('Firebase initialized successfully with new database');
 } else {
   console.warn('Firebase not loaded');
 }

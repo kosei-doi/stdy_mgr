@@ -38,52 +38,7 @@ const subjectsMaster = [
   { id: 'fri-5', name: '', dayOfWeek: '金曜日', slot: 5, dataId: 'fri-5' }
 ];
 
-// 科目名マッピング（@tabler → @platform）
-const subjectMapping = {
-  'CS': 'CS',
-  'Cプロ': 'Cプロ',
-  '線形代数': '線形代数',
-  '微分積分': '微分積分',
-  'ALC': 'ALC',
-  '電磁気学A': '電磁気学A',
-  '力学A': '力学A',
-  '生命科学A': '生命科学A',
-  '実験': '実験',
-  '中国語IA': '中国語IA',
-  '憲法IB': '憲法IB',
-  '電生': '電生',
-  '化学': '化学',
-  '科学と芸術': '科学と芸術',
-  '身体論': '身体論',
-  '電基礎': '電基礎'
-};
 
-// ランダムカラー生成関数
-function generateRandomColor() {
-  const colors = [
-    '#E3F2FD', // 水色
-    '#F3E5F5', // ラベンダー
-    '#FFF8E1', // クリーム
-    '#E0F7FA', // ターコイズ
-    '#F1F8E9', // ミントグリーン
-    '#FCE4EC', // ピンク
-    '#EDE7F6', // ライトパープル
-    '#FFF3E0', // アプリコット
-    '#E8F5E9', // セージグリーン
-    '#E1F5FE', // スカイブルー
-    '#E8EAF6', // ライトブルー
-    '#FFF9C4', // イエロー
-    '#FCE4EC', // ローズ
-    '#E8F5E8', // ライム
-    '#F3E5F5', // オーキッド
-    '#E0F2F1', // ティール
-    '#FFF3E0', // オレンジ
-    '#F1F8E9', // グリーン
-    '#E3F2FD', // ブルー
-    '#FCE4EC'  // ピンク
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
-}
 
 // 科目ごとの背景色を定義（ほんの少し濃い色で見やすく）
 const subjectColors = {
@@ -134,7 +89,6 @@ function checkFirebase() {
   try {
     if (typeof window.firebase !== 'undefined' && window.firebase.db) {
       isFirebaseEnabled = true;
-      console.log('Firebase v11 Realtime Database が有効です');
       return true;
     }
   } catch (e) {
@@ -223,7 +177,6 @@ function updateTask(taskId, taskData) {
     displayTasks(window.tasks);
     updateTaskNumbers(window.tasks);
     updateIncompleteTasksCount(window.tasks);
-    console.log(`✅ タスク ${taskId} を更新しました`);
   }).catch((error) => {
     console.error('タスクの更新に失敗しました:', error);
     alert('タスクの更新に失敗しました。');
@@ -404,7 +357,6 @@ function cleanupOldCompletedTasks(tasks) {
   
   // 削除対象のタスクをFirebaseから削除
   if (tasksToDelete.length > 0) {
-    console.log(`🗑️ ${tasksToDelete.length}個の古い完了タスクを削除中...`);
     tasksToDelete.forEach(taskId => {
       const taskRef = window.firebase.ref(window.firebase.db, `tabler/tasks/${taskId}`);
       window.firebase.remove(taskRef).catch((error) => {
@@ -469,11 +421,6 @@ function loadSubjects() {
               progress: subject.progress || 0,
               lastUpdated: subject.lastUpdated || null
             }));
-            console.log('Firebaseから科目データを読み込みました:', subjectsData);
-            console.log('科目数:', subjectsData.length);
-            subjectsData.forEach(subject => {
-              console.log(`- ${subject.name} (id: ${subject.id}, dataId: ${subject.dataId})`);
-            });
           } else {
             subjectsData = getUniqueSubjects().map(s => ({ 
               id: s.id, 
@@ -482,7 +429,6 @@ function loadSubjects() {
               progress: 0, 
               lastUpdated: null 
             }));
-            console.log('初期科目データを作成');
             saveSubjects(subjectsData);
           }
           resolve(subjectsData);
@@ -496,7 +442,6 @@ function loadSubjects() {
             progress: 0, 
             lastUpdated: null 
           }));
-          console.log('初期科目データを作成（エラー時）:', subjectsData);
           resolve(subjectsData);
         });
     } else {
@@ -508,7 +453,6 @@ function loadSubjects() {
         totalTime: 0, 
         lastUpdated: null 
       }));
-      console.log('初期科目データを作成（ローカル）');
       resolve(subjectsData);
     }
   });
@@ -517,13 +461,11 @@ function loadSubjects() {
 // 進捗データを保存する関数
 function saveSubjects(subjects) {
   subjectsData = subjects;
-  console.log('科目データを更新:', subjectsData);
   
   if (isFirebaseEnabled) {
     const subjectsRef = window.firebase.ref(window.firebase.db, 'subjects');
     window.firebase.set(subjectsRef, subjectsData)
       .then(() => {
-        console.log('Firebaseに保存しました');
       })
       .catch((error) => {
         console.error('Firebaseへの保存に失敗:', error);
@@ -1322,7 +1264,6 @@ async function updateProgressForSubject(subjectName, increment = 1) {
   
   if (!s) {
     // 科目データが存在しない場合は作成
-    console.log(`📝 新しい科目データを作成: ${subjectName} (${dataId})`);
     s = {
       id: dataId,
       name: subjectName,
@@ -1353,7 +1294,6 @@ async function updateProgressForSubject(subjectName, increment = 1) {
     if (window.tasks) {
       updateIncompleteTasksCount(window.tasks);
     }
-    console.log(`✅ ${s.name} の理解度を更新: ${s.progress}回`);
     return true;
   }
   return false;
@@ -1877,7 +1817,6 @@ function wireEvents() {
     
     if (!s && modalState.dataId) {
       // 科目データが存在しない場合は作成
-      console.log(`📝 新しい科目データを作成: ${modalState.name} (${modalState.dataId})`);
       s = {
         id: modalState.dataId,
         name: modalState.name,
@@ -1903,7 +1842,6 @@ function wireEvents() {
       const py = e.clientY || (btnRect.top + btnRect.height / 2);
       playCelebrateAnimation(px, py, ['#10b981', '#34d399', '#6ee7b7', '#22c55e']);
       document.getElementById('taskModal').style.display = 'none';
-      console.log(`✅ ${s.name} の理解度を増加: ${s.progress}回`);
     }
   });
 
@@ -1926,7 +1864,6 @@ function wireEvents() {
       // モーダルの進捗バーも更新
       updateModalProgress(s.dataId);
       document.getElementById('taskModal').style.display = 'none';
-      console.log(`↩️ ${s.name} の理解度を減少: ${s.progress}回`);
     } else if (s && s.progress === 0) {
       alert('理解度は既に0回です。これ以上減らすことはできません。');
     } else {
@@ -1979,13 +1916,10 @@ function wireEvents() {
 
 // 初期化関数
 async function boot() {
-  console.log('🚀 統合アプリを初期化中...');
   
   // 現在の日付を確認
   const today = new Date();
   const todayISO = getTodayISO();
-  console.log('📅 現在の日付:', todayISO);
-  console.log('📅 現在の日付オブジェクト:', today);
   
   // Firebase接続チェック
   checkFirebase();
@@ -1993,19 +1927,11 @@ async function boot() {
   // データを読み込み
   await loadSubjects();
   
-  console.log('📊 === 読み込み完了 ===');
-  console.log('subjectsData:', subjectsData);
-  console.log('subjectsData.length:', subjectsData?.length || 0);
   
   // CS科目のデータを特別に確認
   let csSubject = subjectsData?.find(s => s.name === 'CS' || s.dataId === 'CS');
   if (csSubject) {
-    console.log('🎯 CS科目データ発見:', csSubject);
-    console.log('🎯 CS科目の進捗:', csSubject.progress);
-    console.log('🎯 CS科目の学習時間:', csSubject.totalTime);
   } else {
-    console.log('⚠️ CS科目データが見つかりません - 作成します');
-    console.log('🔍 全科目データ:', subjectsData?.map(s => ({ name: s.name, dataId: s.dataId, id: s.id })));
     
     // CS科目のデータを作成
     const newCSSubject = {
@@ -2070,121 +1996,11 @@ async function boot() {
   
 }
 
-// 時間割の色を強制更新する関数
-function refreshTimetableColors() {
-  if (window.currentTimetableData) {
-    generateTimetable(window.currentTimetableData);
-    updateTimetableProgressBars();
-    
-    // タスク数バッジを再表示
-    if (window.tasks) {
-      updateTaskNumbers(window.tasks);
-    }
-  }
-}
 
-// テスト用タスクを追加する関数
-function addTestTask() {
-  if (!window.tasks) {
-    window.tasks = {};
-  }
-  
-  const testTask = {
-    period: '1限',
-    day: '木',
-    title: 'CS',
-    content: 'テストタスク',
-    dueDate: '2024-12-31',
-    taskType: '課題',
-    completed: false,
-    createdAt: Date.now()
-  };
-  
-  const taskId = 'test-' + Date.now();
-  window.tasks[taskId] = testTask;
-  
-  updateTaskNumbers(window.tasks);
-}
 
-// データベースをクリーンアップする関数
-function cleanupDatabase() {
-  if (!isFirebaseEnabled) {
-    console.log('Firebaseが無効なため、ローカルデータをクリーンアップします');
-    if (subjectsData) {
-      // 空のnameを削除し、重複を除去
-      const cleanedData = [];
-      const seenNames = new Set();
-      
-      subjectsData.forEach(subject => {
-        if (subject.name && subject.name.trim() !== '' && !seenNames.has(subject.name)) {
-          seenNames.add(subject.name);
-          cleanedData.push(subject);
-        }
-      });
-      
-      subjectsData = cleanedData;
-      console.log('ローカルデータをクリーンアップしました');
-    }
-    return;
-  }
-  
-  console.log('Firebaseデータベースをクリーンアップ中...');
-  
-  // Firebaseから全科目データを取得
-  const subjectsRef = window.firebase.ref(window.firebase.db, 'subjects');
-  window.firebase.get(subjectsRef)
-    .then((snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const cleanedData = {};
-        const seenNames = new Set();
-        let removedCount = 0;
-        
-        Object.values(data).forEach(subject => {
-          // 空のnameや重複を除去
-          if (subject.name && subject.name.trim() !== '' && !seenNames.has(subject.name)) {
-            seenNames.add(subject.name);
-            // より適切なdataIdを生成
-            const cleanDataId = subject.name.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '-');
-            cleanedData[cleanDataId] = {
-              id: cleanDataId,
-              name: subject.name,
-              dataId: cleanDataId,
-              progress: subject.progress || 0,
-              lastUpdated: subject.lastUpdated || new Date().toISOString()
-            };
-          } else {
-            removedCount++;
-            console.log(`削除対象: ${subject.name || '(空の名前)'}`);
-          }
-        });
-        
-        // クリーンアップされたデータを保存
-        window.firebase.set(subjectsRef, cleanedData)
-          .then(() => {
-            console.log(`${removedCount}個の重複・空エントリを削除しました`);
-            console.log(`残った科目数: ${Object.keys(cleanedData).length}`);
-            // ローカルデータも更新
-            subjectsData = Object.values(cleanedData);
-            // UIを更新
-            updateTimetableProgressBars();
-            updateSummaryStats();
-          })
-          .catch((error) => {
-            console.error('Firebaseへの保存に失敗:', error);
-          });
-      }
-    })
-    .catch((error) => {
-      console.error('Firebaseからの読み込みに失敗:', error);
-    });
-}
 
 // グローバルに関数を公開
 window.setDate = setDate;
-window.refreshTimetableColors = refreshTimetableColors;
-window.addTestTask = addTestTask;
-window.cleanupDatabase = cleanupDatabase;
 
 // DOMContentLoadedで初期化
 document.addEventListener('DOMContentLoaded', boot);
