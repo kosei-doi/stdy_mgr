@@ -84,6 +84,1415 @@ let displayMode = 'progress'; // 'progress' | 'evaluation'
 let evaluationsData = null;
 let modalState = { name: null, slot: null, dataId: null };
 
+// ============================================
+// Step1: 学期管理機能
+// ============================================
+// グローバル変数: 学期管理
+let semestersData = []; // 学期データ配列
+let currentSemesterId = null; // 選択中の学期ID
+
+// 学期データ構造: { id, name, startDate, endDate, classDays, timetable, createdAt }
+// id: 一意のID（タイムスタンプベース）
+// name: 学期名（例: "2025年度 秋学期"）
+// startDate: 開始日（YYYY-MM-DD形式）
+// endDate: 終了日（YYYY-MM-DD形式）
+// classDays: 授業日の配列（YYYY-MM-DD形式の文字列配列）
+// timetable: 時間割データ（5x5の2次元配列、[period][day]）
+// createdAt: 作成日時（タイムスタンプ）
+
+// 学期データを読み込む関数
+function loadSemesters() {
+  return new Promise((resolve) => {
+    if (isFirebaseEnabled) {
+      // Firebaseから読み込み
+      const semestersRef = window.firebase.ref(window.firebase.db, 'semesters');
+      window.firebase.get(semestersRef)
+        .then((snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            semestersData = Object.values(data);
+            // 既存データにclassDaysやtimetableがない場合は初期化
+            semestersData.forEach(semester => {
+              if (!semester.classDays) {
+                semester.classDays = generateDefaultClassDays(semester.startDate, semester.endDate);
+              }
+              if (!semester.timetable) {
+                semester.timetable = JSON.parse(JSON.stringify(initialTimetableData));
+              }
+            });
+            // デフォルト学期が存在しない場合は作成
+            if (semestersData.length === 0) {
+              createDefaultSemester();
+            }
+          } else {
+            createDefaultSemester();
+          }
+          // 選択中の学期を復元（localStorageから）
+          const savedSemesterId = localStorage.getItem('currentSemesterId');
+          if (savedSemesterId && semestersData.find(s => s.id === savedSemesterId)) {
+            currentSemesterId = savedSemesterId;
+          } else if (semestersData.length > 0) {
+            currentSemesterId = semestersData[0].id;
+            localStorage.setItem('currentSemesterId', currentSemesterId);
+          }
+          resolve(semestersData);
+        })
+        .catch((error) => {
+          console.error('Firebaseからの学期データ読み込みに失敗:', error);
+          loadSemestersFromLocalStorage();
+          resolve(semestersData);
+        });
+    } else {
+      // localStorageから読み込み
+      loadSemestersFromLocalStorage();
+      resolve(semestersData);
+    }
+  });
+}
+
+// localStorageから学期データを読み込む関数
+function loadSemestersFromLocalStorage() {
+  try {
+    const stored = localStorage.getItem('semestersData');
+    if (stored) {
+      semestersData = JSON.parse(stored);
+      // 既存データにclassDaysやtimetableがない場合は初期化
+      semestersData.forEach(semester => {
+        if (!semester.classDays) {
+          semester.classDays = generateDefaultClassDays(semester.startDate, semester.endDate);
+        }
+        if (!semester.timetable) {
+          semester.timetable = JSON.parse(JSON.stringify(initialTimetableData));
+        }
+      });
+    } else {
+      createDefaultSemester();
+    }
+    // 選択中の学期を復元
+    const savedSemesterId = localStorage.getItem('currentSemesterId');
+    if (savedSemesterId && semestersData.find(s => s.id === savedSemesterId)) {
+      currentSemesterId = savedSemesterId;
+    } else if (semestersData.length > 0) {
+      currentSemesterId = semestersData[0].id;
+      localStorage.setItem('currentSemesterId', currentSemesterId);
+    }
+  } catch (error) {
+    console.error('localStorageからの学期データ読み込みに失敗:', error);
+    createDefaultSemester();
+  }
+}
+
+// デフォルト学期を作成する関数
+function createDefaultSemester() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1;
+  
+  // 現在の月から学期を推定（4-9月: 春学期、10-3月: 秋学期）
+  let semesterName, startDate, endDate;
+  if (month >= 4 && month <= 9) {
+    semesterName = `${year}年度 春学期`;
+    startDate = `${year}-04-01`;
+    endDate = `${year}-09-30`;
+  } else {
+    semesterName = month >= 10 ? `${year}年度 秋学期` : `${year-1}年度 秋学期`;
+    if (month >= 10) {
+      startDate = `${year}-10-01`;
+      endDate = `${year+1}-03-31`;
+    } else {
+      startDate = `${year-1}-10-01`;
+      endDate = `${year}-03-31`;
+    }
+  }
+  
+  // デフォルトの授業日を生成（月〜金のみ、祝日は除外）
+  const classDays = generateDefaultClassDays(startDate, endDate);
+  
+  // 空の時間割（5限×5曜日）
+  const emptyTimetable = [
+    ['', '', '', '', ''],  // 1限
+    ['', '', '', '', ''],  // 2限
+    ['', '', '', '', ''],  // 3限
+    ['', '', '', '', ''],  // 4限
+    ['', '', '', '', '']   // 5限
+  ];
+  
+  const defaultSemester = {
+    id: `semester_${Date.now()}`,
+    name: semesterName,
+    startDate: startDate,
+    endDate: endDate,
+    classDays: classDays,
+    timetable: emptyTimetable,
+    createdAt: Date.now()
+  };
+  
+  semestersData = [defaultSemester];
+  currentSemesterId = defaultSemester.id;
+  saveSemesters();
+  localStorage.setItem('currentSemesterId', currentSemesterId);
+}
+
+// ローカル時間で日付文字列を生成する関数（YYYY-MM-DD形式）
+function formatDateLocal(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// デフォルトの授業日を生成する関数（月〜金のみ）
+function generateDefaultClassDays(startDate, endDate) {
+  const classDays = [];
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const current = new Date(start);
+  
+  // 時間をリセットして日付のみで比較
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+  current.setHours(0, 0, 0, 0);
+  
+  while (current <= end) {
+    const dayOfWeek = current.getDay();
+    // 月曜日(1)〜金曜日(5)のみ
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      const dateStr = formatDateLocal(current);
+      classDays.push(dateStr);
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  
+  return classDays;
+}
+
+// 学期データを保存する関数
+function saveSemesters() {
+  if (isFirebaseEnabled) {
+    // Firebaseに保存
+    const semestersRef = window.firebase.ref(window.firebase.db, 'semesters');
+    // オブジェクト形式に変換
+    const semestersObj = {};
+    semestersData.forEach(semester => {
+      semestersObj[semester.id] = semester;
+    });
+    window.firebase.set(semestersRef, semestersObj)
+      .catch((error) => {
+        console.error('Firebaseへの学期データ保存に失敗:', error);
+        // フォールバック: localStorageにも保存
+        localStorage.setItem('semestersData', JSON.stringify(semestersData));
+      });
+  } else {
+    // localStorageに保存
+    localStorage.setItem('semestersData', JSON.stringify(semestersData));
+  }
+}
+
+// 学期を追加する関数
+function addSemester(name, startDate, endDate) {
+  // デフォルトの授業日を生成
+  const classDays = generateDefaultClassDays(startDate, endDate);
+  // 空の時間割（5限×5曜日）
+  const emptyTimetable = [
+    ['', '', '', '', ''],  // 1限
+    ['', '', '', '', ''],  // 2限
+    ['', '', '', '', ''],  // 3限
+    ['', '', '', '', ''],  // 4限
+    ['', '', '', '', '']   // 5限
+  ];
+  
+  const newSemester = {
+    id: `semester_${Date.now()}`,
+    name: name,
+    startDate: startDate,
+    endDate: endDate,
+    classDays: classDays,
+    timetable: emptyTimetable,
+    createdAt: Date.now()
+  };
+  semestersData.push(newSemester);
+  saveSemesters();
+  return newSemester;
+}
+
+// 学期を更新する関数
+function updateSemester(semesterId, updates) {
+  const index = semestersData.findIndex(s => s.id === semesterId);
+  if (index !== -1) {
+    const semester = semestersData[index];
+    // 開始日・終了日が変更された場合、授業日を再生成
+    if (updates.startDate || updates.endDate) {
+      const startDate = updates.startDate || semester.startDate;
+      const endDate = updates.endDate || semester.endDate;
+      // 既存の授業日を保持しつつ、新しい範囲の日付を追加
+      const newClassDays = generateDefaultClassDays(startDate, endDate);
+      // 既存の授業日とマージ（重複を除去）
+      const existingDays = semester.classDays || [];
+      const mergedDays = [...new Set([...existingDays, ...newClassDays])]
+        .filter(date => date >= startDate && date <= endDate)
+        .sort();
+      updates.classDays = mergedDays;
+    }
+    semestersData[index] = { ...semester, ...updates };
+    saveSemesters();
+    return semestersData[index];
+  }
+  return null;
+}
+
+// 学期を削除する関数
+function deleteSemester(semesterId) {
+  const index = semestersData.findIndex(s => s.id === semesterId);
+  if (index !== -1) {
+    semestersData.splice(index, 1);
+    saveSemesters();
+    // 削除した学期が選択中だった場合、最初の学期を選択
+    if (currentSemesterId === semesterId) {
+      if (semestersData.length > 0) {
+        currentSemesterId = semestersData[0].id;
+        localStorage.setItem('currentSemesterId', currentSemesterId);
+      } else {
+        currentSemesterId = null;
+        localStorage.removeItem('currentSemesterId');
+        // 学期がなくなった場合はデフォルト学期を作成
+        createDefaultSemester();
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
+// 選択中の学期を取得する関数
+function getCurrentSemester() {
+  if (!currentSemesterId) return null;
+  return semestersData.find(s => s.id === currentSemesterId) || null;
+}
+
+// 学期選択UIを生成する関数（削除: ヘッダーのセレクトボックスは不要）
+// 学期の選択は管理画面の学期カードから行えます
+function renderSemesterSelector() {
+  // 既存のセレクトボックスを削除（念のため）
+  const existingSelector = document.getElementById('semesterSelector');
+  if (existingSelector) {
+    existingSelector.remove();
+  }
+  // セレクトボックスは表示しない
+}
+
+// 学期変更時のコールバック関数
+function onSemesterChanged() {
+  // 選択中の学期に紐づくデータのみ表示する処理
+  const currentSemester = getCurrentSemester();
+  console.log('学期が変更されました:', currentSemester);
+  
+  // 時間割を再読み込み
+  loadTimetable();
+  
+  // 学期一覧を再表示
+  renderSemestersList();
+}
+
+// 学期一覧を表示する関数
+function renderSemestersList() {
+  const semestersList = document.getElementById('semestersList');
+  if (!semestersList) return;
+  
+  semestersList.innerHTML = '';
+  
+  if (semestersData.length === 0) {
+    semestersList.innerHTML = '<p class="empty-message">学期が登録されていません</p>';
+    return;
+  }
+  
+  semestersData.forEach(semester => {
+    const semesterCard = document.createElement('div');
+    semesterCard.className = 'semester-card';
+    if (semester.id === currentSemesterId) {
+      semesterCard.classList.add('active');
+    }
+    
+    semesterCard.innerHTML = `
+      <div class="semester-card-header">
+        <h3 class="semester-name">${semester.name}</h3>
+        ${semester.id === currentSemesterId ? '<span class="current-badge">選択中</span>' : ''}
+      </div>
+      <div class="semester-card-body">
+        <div class="semester-info">
+          <span class="info-label">開始日:</span>
+          <span class="info-value">${semester.startDate}</span>
+        </div>
+        <div class="semester-info">
+          <span class="info-label">終了日:</span>
+          <span class="info-value">${semester.endDate}</span>
+        </div>
+      </div>
+      <div class="semester-card-actions">
+        <button class="btn btn-small btn-select" data-semester-id="${semester.id}">選択</button>
+        <button class="btn btn-small btn-classdays" data-semester-id="${semester.id}">授業日</button>
+        <button class="btn btn-small btn-timetable" data-semester-id="${semester.id}">時間割</button>
+        <button class="btn btn-small btn-delete" data-semester-id="${semester.id}">削除</button>
+      </div>
+    `;
+    
+    // 選択ボタン
+    const selectBtn = semesterCard.querySelector('.btn-select');
+    selectBtn.addEventListener('click', () => {
+      currentSemesterId = semester.id;
+      localStorage.setItem('currentSemesterId', currentSemesterId);
+      renderSemesterSelector();
+      
+      // 学期切り替え時にタスクと進捗を再読み込み
+      loadTasks();
+      loadSubjects().then(() => {
+        updateTimetableProgressBars();
+        updateSummaryStats();
+      });
+      onSemesterChanged();
+    });
+    
+    // 授業日管理ボタン
+    const classDaysBtn = semesterCard.querySelector('.btn-classdays');
+    classDaysBtn.addEventListener('click', () => {
+      currentSemesterId = semester.id;
+      localStorage.setItem('currentSemesterId', currentSemesterId);
+      renderSemesterSelector();
+      showClassDaysManagement();
+    });
+    
+    // 時間割管理ボタン
+    const timetableBtn = semesterCard.querySelector('.btn-timetable');
+    timetableBtn.addEventListener('click', () => {
+      currentSemesterId = semester.id;
+      localStorage.setItem('currentSemesterId', currentSemesterId);
+      renderSemesterSelector();
+      showTimetableManagement();
+    });
+    
+    // 削除ボタン
+    const deleteBtn = semesterCard.querySelector('.btn-delete');
+    deleteBtn.addEventListener('click', () => {
+      if (confirm(`「${semester.name}」を削除しますか？`)) {
+        deleteSemester(semester.id);
+        renderSemestersList();
+        renderSemesterSelector();
+      }
+    });
+    
+    semestersList.appendChild(semesterCard);
+  });
+}
+
+// 授業日管理画面を表示する関数（モーダル）
+function showClassDaysManagement() {
+  const modal = document.getElementById('classDaysModal');
+  if (!modal) return;
+  
+  const currentSemester = getCurrentSemester();
+  
+  if (!currentSemester) {
+    alert('学期を選択してください');
+    return;
+  }
+  
+  // 学期情報を表示（シンプル版）
+  renderSemesterInfoSimple(currentSemester);
+  
+  // カレンダーを表示（学期の開始日から、または現在の月から）
+  const startDate = new Date(currentSemester.startDate);
+  const today = new Date();
+  const semesterStart = new Date(currentSemester.startDate);
+  const semesterEnd = new Date(currentSemester.endDate);
+  
+  // 現在の月が学期の範囲内なら現在の月を、そうでなければ開始月を表示
+  // 月の1日を基準にする
+  if (today >= semesterStart && today <= semesterEnd) {
+    currentCalendarMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  } else if (today < semesterStart) {
+    currentCalendarMonth = new Date(semesterStart.getFullYear(), semesterStart.getMonth(), 1);
+  } else {
+    // 学期終了後は、終了月から表示月数を引いた月の1日を基準にする
+    const endMonth = new Date(semesterEnd.getFullYear(), semesterEnd.getMonth(), 1);
+    currentCalendarMonth = new Date(endMonth.getFullYear(), endMonth.getMonth() - (monthsCount - 1), 1);
+  }
+  
+  // カレンダーコントロールを再設定（モーダルが開かれるたびに再設定）
+  setupCalendarControls();
+  
+  // カレンダーを表示
+  renderClassDaysCalendar(currentCalendarMonth);
+  
+  // モーダルを表示
+  modal.style.display = 'block';
+  
+  // 閉じるボタン
+  const closeBtn = document.getElementById('closeClassDaysModal');
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      modal.style.display = 'none';
+    };
+  }
+  
+  // モーダル外クリックで閉じる
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  };
+  
+  // ESCキーで閉じる
+  const handleEscape = (e) => {
+    if (e.key === 'Escape' && modal.style.display === 'block') {
+      modal.style.display = 'none';
+      document.removeEventListener('keydown', handleEscape);
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
+}
+
+// 学期情報を表示する関数（シンプル版）
+function renderSemesterInfoSimple(semester) {
+  const infoEl = document.getElementById('semesterInfo');
+  if (!infoEl) return;
+  
+  infoEl.innerHTML = `
+    <span class="semester-name-simple">${semester.name}</span>
+    <span class="semester-dates-simple">${semester.startDate} 〜 ${semester.endDate}</span>
+    <button id="editDatesBtn" class="btn-edit-dates-simple">編集</button>
+  `;
+  
+  // 編集ボタンのイベントリスナー
+  const editDatesBtn = document.getElementById('editDatesBtn');
+  if (editDatesBtn) {
+    editDatesBtn.addEventListener('click', () => {
+      showDateEditForm(semester);
+    });
+  }
+}
+
+// 学期情報を表示する関数（管理画面用）
+function renderSemesterInfo(semester) {
+  const infoEl = document.getElementById('semesterInfo');
+  if (!infoEl) return;
+  
+  infoEl.innerHTML = `
+    <div class="semester-info-item">
+      <span class="info-label">学期:</span>
+      <span class="info-value">${semester.name}</span>
+    </div>
+    <div class="semester-info-item">
+      <span class="info-label">期間:</span>
+      <span class="info-value">${semester.startDate} 〜 ${semester.endDate}</span>
+      <button id="editDatesBtn" class="btn-edit-dates">編集</button>
+    </div>
+  `;
+  
+  // 編集ボタンのイベントリスナー
+  const editDatesBtn = document.getElementById('editDatesBtn');
+  if (editDatesBtn) {
+    editDatesBtn.addEventListener('click', () => {
+      showDateEditForm(semester);
+    });
+  }
+}
+
+// 日付編集フォームを表示する関数
+function showDateEditForm(semester) {
+  const editForm = document.getElementById('semesterDateEdit');
+  const infoEl = document.getElementById('semesterInfo');
+  
+  if (!editForm || !infoEl) return;
+  
+  // 最新の学期データを取得
+  const currentSemester = getCurrentSemester();
+  if (!currentSemester) {
+    alert('学期が選択されていません');
+    return;
+  }
+  
+  // フォームに現在の値を設定
+  const startDateInput = document.getElementById('editStartDate');
+  const endDateInput = document.getElementById('editEndDate');
+  
+  if (startDateInput) startDateInput.value = currentSemester.startDate;
+  if (endDateInput) endDateInput.value = currentSemester.endDate;
+  
+  // フォームを表示、情報を非表示
+  infoEl.style.display = 'none';
+  editForm.style.display = 'flex';
+  
+  // 保存ボタン
+  const saveBtn = document.getElementById('saveDatesBtn');
+  if (saveBtn) {
+    // 既存のイベントリスナーを削除
+    const newSaveBtn = saveBtn.cloneNode(true);
+    saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+    
+    newSaveBtn.addEventListener('click', () => {
+      const currentSemester = getCurrentSemester();
+      if (currentSemester) {
+        saveSemesterDates(currentSemester);
+      } else {
+        alert('学期が選択されていません');
+      }
+    });
+  }
+  
+  // キャンセルボタン
+  const cancelBtn = document.getElementById('cancelDatesBtn');
+  if (cancelBtn) {
+    // 既存のイベントリスナーを削除
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+    
+    newCancelBtn.addEventListener('click', () => {
+      cancelDateEdit();
+    });
+  }
+}
+
+// 学期の日付を保存する関数
+function saveSemesterDates(semester) {
+  const startDateInput = document.getElementById('editStartDate');
+  const endDateInput = document.getElementById('editEndDate');
+  
+  if (!startDateInput || !endDateInput) return;
+  
+  const newStartDate = startDateInput.value;
+  const newEndDate = endDateInput.value;
+  
+  if (!newStartDate || !newEndDate) {
+    alert('開始日と終了日を入力してください');
+    return;
+  }
+  
+  if (newStartDate > newEndDate) {
+    alert('開始日は終了日より前である必要があります');
+    return;
+  }
+  
+  // 学期を更新
+  const updatedSemester = updateSemester(semester.id, {
+    startDate: newStartDate,
+    endDate: newEndDate
+  });
+  
+  if (!updatedSemester) {
+    alert('学期の更新に失敗しました');
+    return;
+  }
+  
+  // フォームを非表示、情報を再表示
+  cancelDateEdit();
+  
+  // 更新された学期オブジェクトを使って再表示
+  renderSemesterInfoSimple(updatedSemester);
+  renderClassDaysCalendar(currentCalendarMonth);
+}
+
+// 日付編集をキャンセルする関数
+function cancelDateEdit() {
+  const editForm = document.getElementById('semesterDateEdit');
+  const infoEl = document.getElementById('semesterInfo');
+  
+  if (editForm) editForm.style.display = 'none';
+  if (infoEl) {
+    // モーダル内か管理画面内かで表示方法を変える
+    const modal = document.getElementById('classDaysModal');
+    if (modal && modal.style.display === 'block') {
+      infoEl.style.display = 'flex';
+    } else {
+      infoEl.style.display = 'flex';
+    }
+  }
+}
+
+// 授業日統計を表示する関数
+function renderClassDaysStats(semester) {
+  const statsEl = document.getElementById('classdaysStats');
+  if (!statsEl) return;
+  
+  const classDays = semester.classDays || [];
+  const startDate = new Date(semester.startDate);
+  const endDate = new Date(semester.endDate);
+  
+  // 学期内の平日数を計算
+  let weekdaysCount = 0;
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    const dayOfWeek = current.getDay();
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      weekdaysCount++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  
+  const classDaysCount = classDays.length;
+  const holidaysCount = weekdaysCount - classDaysCount;
+  
+  statsEl.innerHTML = `
+    <div class="stat-item">
+      <span class="stat-value">${classDaysCount}</span>
+      <span class="stat-label">授業日</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">${holidaysCount}</span>
+      <span class="stat-label">休日</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">${weekdaysCount}</span>
+      <span class="stat-label">平日合計</span>
+    </div>
+  `;
+}
+
+// 時間割管理画面を表示する関数（モーダル）
+function showTimetableManagement() {
+  const modal = document.getElementById('timetableModal');
+  if (!modal) return;
+  
+  const currentSemester = getCurrentSemester();
+  if (!currentSemester) {
+    alert('学期を選択してください');
+    return;
+  }
+  
+  // 時間割データのコピーを作成（編集用）
+  const timetableCopy = JSON.parse(JSON.stringify(currentSemester.timetable || JSON.parse(JSON.stringify(initialTimetableData))));
+  modal.dataset.timetableData = JSON.stringify(timetableCopy);
+  
+  renderTimetableEditor();
+  
+  // 保存ボタン
+  const saveBtn = document.getElementById('saveTimetableBtn');
+  if (saveBtn) {
+    saveBtn.onclick = () => {
+      saveTimetableChanges();
+    };
+  }
+  
+  // キャンセルボタン
+  const cancelBtn = document.getElementById('cancelTimetableBtn');
+  if (cancelBtn) {
+    cancelBtn.onclick = () => {
+      modal.style.display = 'none';
+    };
+  }
+  
+  // モーダルを表示
+  modal.style.display = 'block';
+  
+  // 閉じるボタン
+  const closeBtn = document.getElementById('closeTimetableModal');
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      modal.style.display = 'none';
+    };
+  }
+  
+  // モーダル外クリックで閉じる
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  };
+  
+  // ESCキーで閉じる
+  const handleEscape = (e) => {
+    if (e.key === 'Escape' && modal.style.display === 'block') {
+      modal.style.display = 'none';
+      document.removeEventListener('keydown', handleEscape);
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
+}
+
+// 時間割の変更を保存する関数
+function saveTimetableChanges() {
+  const modal = document.getElementById('timetableModal');
+  const editor = document.getElementById('timetableEditor');
+  if (!modal || !editor) return;
+  
+  const currentSemester = getCurrentSemester();
+  if (!currentSemester) return;
+  
+  // 入力フィールドから時間割データを取得
+  const inputs = editor.querySelectorAll('.timetable-input');
+  const timetable = JSON.parse(JSON.stringify(initialTimetableData));
+  
+  inputs.forEach(input => {
+    const periodIndex = parseInt(input.dataset.periodIndex);
+    const dayIndex = parseInt(input.dataset.dayIndex);
+    if (!isNaN(periodIndex) && !isNaN(dayIndex)) {
+      timetable[periodIndex][dayIndex] = input.value.trim();
+    }
+  });
+  
+  // 学期の時間割を更新
+  currentSemester.timetable = timetable;
+  saveSemesters();
+  
+  // 時間割を再読み込み（表示を更新）
+  loadTimetable();
+  
+  // モーダルを閉じる
+  modal.style.display = 'none';
+}
+
+// 時間割エディタを表示する関数
+function renderTimetableEditor() {
+  const editor = document.getElementById('timetableEditor');
+  if (!editor) return;
+  
+  const currentSemester = getCurrentSemester();
+  if (!currentSemester) {
+    editor.innerHTML = '<p class="empty-message">学期を選択してください</p>';
+    return;
+  }
+  
+  // モーダルから一時データを取得、なければ学期のデータを使用
+  const modal = document.getElementById('timetableModal');
+  let timetable;
+  if (modal && modal.dataset.timetableData) {
+    timetable = JSON.parse(modal.dataset.timetableData);
+  } else {
+    timetable = currentSemester.timetable || JSON.parse(JSON.stringify(initialTimetableData));
+  }
+  const days = ['月', '火', '水', '木', '金'];
+  const periods = ['1限', '2限', '3限', '4限', '5限'];
+  
+  editor.innerHTML = '';
+  
+  // ヘッダー行
+  const headerRow = document.createElement('div');
+  headerRow.className = 'timetable-editor-header';
+  const emptyCell = document.createElement('div');
+  emptyCell.className = 'timetable-editor-cell header';
+  headerRow.appendChild(emptyCell);
+  days.forEach(day => {
+    const cell = document.createElement('div');
+    cell.className = 'timetable-editor-cell header';
+    cell.textContent = day;
+    headerRow.appendChild(cell);
+  });
+  editor.appendChild(headerRow);
+  
+  // 時間割本体
+  periods.forEach((period, periodIndex) => {
+    const row = document.createElement('div');
+    row.className = 'timetable-editor-row';
+    
+    // 時限ラベル
+    const periodCell = document.createElement('div');
+    periodCell.className = 'timetable-editor-cell period-label';
+    periodCell.textContent = period;
+    row.appendChild(periodCell);
+    
+    // 各曜日のセル
+    days.forEach((day, dayIndex) => {
+      const cell = document.createElement('div');
+      cell.className = 'timetable-editor-cell editable';
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = timetable[periodIndex][dayIndex] || '';
+      input.placeholder = '科目名';
+      input.className = 'timetable-input';
+      input.dataset.periodIndex = periodIndex;
+      input.dataset.dayIndex = dayIndex;
+      // changeイベントでは一時的なデータに保存（保存ボタンで確定）
+      input.addEventListener('input', () => {
+        timetable[periodIndex][dayIndex] = input.value.trim();
+      });
+      
+      cell.appendChild(input);
+      row.appendChild(cell);
+    });
+    
+    editor.appendChild(row);
+  });
+}
+
+// 学期追加モーダルを表示する関数
+function showSemesterAddModal() {
+  let modal = document.getElementById('semesterModal');
+  if (!modal) {
+    createSemesterModal();
+    // モーダル作成後、再度取得
+    modal = document.getElementById('semesterModal');
+  }
+  
+  if (!modal) {
+    console.error('学期モーダルの作成に失敗しました');
+    return;
+  }
+  
+  const modalTitle = document.getElementById('semesterModalTitle');
+  const semesterForm = document.getElementById('semesterForm');
+  const semesterIdInput = document.getElementById('semesterId');
+  const semesterYearInput = document.getElementById('semesterYear');
+  const semesterTypeInput = document.getElementById('semesterType');
+  
+  if (modalTitle) modalTitle.textContent = '学期を追加';
+  if (semesterForm) semesterForm.reset();
+  if (semesterIdInput) semesterIdInput.value = '';
+  
+  // デフォルト値を設定
+  if (semesterYearInput) {
+    const currentYear = new Date().getFullYear();
+    semesterYearInput.value = currentYear;
+  }
+  if (semesterTypeInput) {
+    semesterTypeInput.value = '';
+  }
+  
+  modal.style.display = 'block';
+}
+
+// 学期編集モーダルを表示する関数
+function showSemesterEditModal(semester) {
+  let modal = document.getElementById('semesterModal');
+  if (!modal) {
+    createSemesterModal();
+    // モーダル作成後、再度取得
+    modal = document.getElementById('semesterModal');
+  }
+  
+  if (!modal) {
+    console.error('学期モーダルの作成に失敗しました');
+    return;
+  }
+  
+  const modalTitle = document.getElementById('semesterModalTitle');
+  const semesterForm = document.getElementById('semesterForm');
+  const semesterIdInput = document.getElementById('semesterId');
+  const semesterYearInput = document.getElementById('semesterYear');
+  const semesterTypeInput = document.getElementById('semesterType');
+  const semesterStartDateInput = document.getElementById('semesterStartDate');
+  const semesterEndDateInput = document.getElementById('semesterEndDate');
+  
+  modalTitle.textContent = '学期を編集';
+  if (semesterIdInput) semesterIdInput.value = semester.id;
+  
+  // 学期名から年度と学期タイプを解析
+  const nameMatch = semester.name.match(/(\d+)年度\s*(春|夏|秋|冬)学期/);
+  if (nameMatch && semesterYearInput && semesterTypeInput) {
+    const year = parseInt(nameMatch[1]);
+    const typeName = nameMatch[2];
+    const typeMap = { '春': 'spring', '夏': 'summer', '秋': 'fall', '冬': 'winter' };
+    
+    semesterYearInput.value = year;
+    semesterTypeInput.value = typeMap[typeName] || '';
+  }
+  
+  if (semesterStartDateInput) semesterStartDateInput.value = semester.startDate;
+  if (semesterEndDateInput) semesterEndDateInput.value = semester.endDate;
+  
+  modal.style.display = 'block';
+}
+
+// 年度と学期タイプから開始日・終了日を取得する関数
+function getSemesterDates(year, semesterType) {
+  switch (semesterType) {
+    case 'spring':
+      return {
+        startDate: `${year}-04-01`,
+        endDate: `${year}-09-30`
+      };
+    case 'summer':
+      return {
+        startDate: `${year}-07-01`,
+        endDate: `${year}-08-31`
+      };
+    case 'fall':
+      return {
+        startDate: `${year}-10-01`,
+        endDate: `${year + 1}-03-31`
+      };
+    case 'winter':
+      return {
+        startDate: `${year}-12-01`,
+        endDate: `${year + 1}-02-28`
+      };
+    default:
+      return null;
+  }
+}
+
+// 学期管理モーダルを作成する関数
+function createSemesterModal() {
+  const modal = document.createElement('div');
+  modal.id = 'semesterModal';
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="semesterModalTitle">学期を追加</h2>
+      </div>
+      <form id="semesterForm">
+        <input type="hidden" id="semesterId">
+        <div class="form-group">
+          <label for="semesterYear">年度</label>
+          <input type="number" id="semesterYear" required min="2000" max="2100" placeholder="2025" class="year-input">
+        </div>
+        <div class="form-group">
+          <label for="semesterType">学期</label>
+          <select id="semesterType" required>
+            <option value="">選択してください</option>
+            <option value="spring">春学期</option>
+            <option value="summer">夏学期</option>
+            <option value="fall">秋学期</option>
+            <option value="winter">冬学期</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="semesterStartDate">開始日</label>
+          <input type="date" id="semesterStartDate" required>
+        </div>
+        <div class="form-group">
+          <label for="semesterEndDate">終了日</label>
+          <input type="date" id="semesterEndDate" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancelSemesterBtn" class="btn">キャンセル</button>
+          <button type="submit" class="btn primary">保存</button>
+        </div>
+      </form>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // 年度入力フィールドに現在年をデフォルト値として設定
+  const yearInput = document.getElementById('semesterYear');
+  if (yearInput) {
+    const currentYear = new Date().getFullYear();
+    yearInput.value = currentYear;
+  }
+  
+  // 学期タイプが変更されたときに日付を自動設定
+  const semesterTypeSelect = document.getElementById('semesterType');
+  const yearInputEl = document.getElementById('semesterYear');
+  const startDateInput = document.getElementById('semesterStartDate');
+  const endDateInput = document.getElementById('semesterEndDate');
+  
+  function updateSemesterDates() {
+    const year = parseInt(yearInputEl?.value);
+    const semesterType = semesterTypeSelect?.value;
+    
+    if (!year || !semesterType) return;
+    
+    const dates = getSemesterDates(year, semesterType);
+    if (dates && startDateInput && endDateInput) {
+      startDateInput.value = dates.startDate;
+      endDateInput.value = dates.endDate;
+    }
+  }
+  
+  if (semesterTypeSelect) {
+    semesterTypeSelect.addEventListener('change', updateSemesterDates);
+  }
+  if (yearInputEl) {
+    yearInputEl.addEventListener('input', updateSemesterDates);
+    yearInputEl.addEventListener('change', updateSemesterDates);
+  }
+  
+  // フォーム送信
+  const form = document.getElementById('semesterForm');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    const semesterId = document.getElementById('semesterId').value;
+    const year = parseInt(document.getElementById('semesterYear').value);
+    const semesterType = document.getElementById('semesterType').value;
+    const startDate = document.getElementById('semesterStartDate').value;
+    const endDate = document.getElementById('semesterEndDate').value;
+    
+    // 学期名を生成
+    const semesterTypeNames = {
+      'spring': '春学期',
+      'summer': '夏学期',
+      'fall': '秋学期',
+      'winter': '冬学期'
+    };
+    const name = `${year}年度 ${semesterTypeNames[semesterType]}`;
+    
+    if (semesterId) {
+      // 編集
+      updateSemester(semesterId, { name, startDate, endDate });
+    } else {
+      // 追加
+      addSemester(name, startDate, endDate);
+    }
+    
+    modal.style.display = 'none';
+    renderSemestersList();
+    renderSemesterSelector();
+  });
+  
+  // キャンセルボタン
+  const cancelBtn = document.getElementById('cancelSemesterBtn');
+  cancelBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+  
+  // モーダル外クリックで閉じる
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+  
+  // ESCキーで閉じる
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.style.display === 'block') {
+      modal.style.display = 'none';
+    }
+  });
+}
+
+// グローバル変数: カレンダーの現在の月
+let currentCalendarMonth = new Date();
+let monthsCount = 3; // 表示する月数（デフォルト3ヶ月）
+
+// 管理画面を初期化する関数
+function initializeManageTab() {
+  // 学期追加ボタン
+  const addSemesterBtn = document.getElementById('addSemesterBtn');
+  if (addSemesterBtn) {
+    addSemesterBtn.addEventListener('click', () => {
+      showSemesterAddModal();
+    });
+  }
+  
+  // 学期一覧を表示
+  renderSemestersList();
+  
+  // カレンダーコントロール（イベントリスナーは後で設定）
+  setupCalendarControls();
+}
+
+// カレンダーコントロールを設定する関数
+let prevMonthHandler = null;
+let nextMonthHandler = null;
+let todayHandler = null;
+
+function setupCalendarControls() {
+  const prevMonthBtn = document.getElementById('prevMonthBtn');
+  const nextMonthBtn = document.getElementById('nextMonthBtn');
+  const todayBtn = document.getElementById('todayBtn');
+  
+  // 既存のイベントリスナーを削除
+  if (prevMonthBtn && prevMonthHandler) {
+    prevMonthBtn.removeEventListener('click', prevMonthHandler);
+  }
+  if (nextMonthBtn && nextMonthHandler) {
+    nextMonthBtn.removeEventListener('click', nextMonthHandler);
+  }
+  if (todayBtn && todayHandler) {
+    todayBtn.removeEventListener('click', todayHandler);
+  }
+  
+  // 新しいイベントリスナーを作成
+  prevMonthHandler = () => {
+    // 月の1日を基準に、monthsCountヶ月前に移動
+    const newMonth = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - monthsCount, 1);
+    currentCalendarMonth = newMonth;
+    renderClassDaysCalendar(currentCalendarMonth);
+  };
+  
+  nextMonthHandler = () => {
+    // 月の1日を基準に、monthsCountヶ月後に移動
+    const newMonth = new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + monthsCount, 1);
+    currentCalendarMonth = newMonth;
+    renderClassDaysCalendar(currentCalendarMonth);
+  };
+  
+  todayHandler = () => {
+    // 今日の月の1日を基準にする
+    const today = new Date();
+    currentCalendarMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    renderClassDaysCalendar(currentCalendarMonth);
+  };
+  
+  // イベントリスナーを追加
+  if (prevMonthBtn) {
+    prevMonthBtn.addEventListener('click', prevMonthHandler);
+  }
+  if (nextMonthBtn) {
+    nextMonthBtn.addEventListener('click', nextMonthHandler);
+  }
+  if (todayBtn) {
+    todayBtn.addEventListener('click', todayHandler);
+  }
+}
+
+// 授業日カレンダーを表示する関数（複数月対応）
+function renderClassDaysCalendar(startMonth) {
+  const calendar = document.getElementById('classDaysCalendar');
+  const monthDisplay = document.getElementById('currentMonthDisplay');
+  
+  if (!calendar) {
+    console.error('カレンダー要素が見つかりません');
+    return;
+  }
+  
+  const currentSemester = getCurrentSemester();
+  if (!currentSemester) {
+    calendar.innerHTML = '<p class="empty-message">学期を選択してください</p>';
+    if (monthDisplay) monthDisplay.textContent = '';
+    return;
+  }
+  
+  // 月がDateオブジェクトでない場合は変換
+  if (!(startMonth instanceof Date)) {
+    startMonth = new Date(startMonth);
+  }
+  
+  // 月表示を更新
+  if (monthDisplay) {
+    const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+    if (monthsCount === 1) {
+      monthDisplay.textContent = `${startMonth.getFullYear()}年${monthNames[startMonth.getMonth()]}`;
+    } else {
+      // 最後の月を計算（月の1日を基準に計算）
+      const endMonth = new Date(startMonth.getFullYear(), startMonth.getMonth() + monthsCount - 1, 1);
+      monthDisplay.textContent = `${startMonth.getFullYear()}年${monthNames[startMonth.getMonth()]} 〜 ${endMonth.getFullYear()}年${monthNames[endMonth.getMonth()]}`;
+    }
+  }
+  
+  // 学期の開始日・終了日を取得
+  const startDate = new Date(currentSemester.startDate);
+  const endDate = new Date(currentSemester.endDate);
+  const classDays = currentSemester.classDays || [];
+  
+  calendar.innerHTML = '';
+  
+  // 複数のカレンダーを横並びで表示
+  const calendarsContainer = document.createElement('div');
+  calendarsContainer.className = 'calendars-container';
+  
+  for (let m = 0; m < monthsCount; m++) {
+    // 月の1日を基準に、mヶ月後の月を作成
+    const month = new Date(startMonth.getFullYear(), startMonth.getMonth() + m, 1);
+    
+    const monthCalendar = document.createElement('div');
+    monthCalendar.className = 'month-calendar';
+    
+    // 月のタイトル
+    const monthTitle = document.createElement('div');
+    monthTitle.className = 'month-title';
+    const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+    monthTitle.textContent = `${month.getFullYear()}年${monthNames[month.getMonth()]}`;
+    monthCalendar.appendChild(monthTitle);
+    
+    // 曜日ヘッダー（授業数表示付き）
+    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+    const weekdayNumbers = [0, 1, 2, 3, 4, 5, 6]; // 日曜日=0, 月曜日=1, ...
+    
+    // 各曜日の学期合計授業数を計算
+    const weekdayClassCounts = {};
+    const semesterStart = new Date(currentSemester.startDate);
+    const semesterEnd = new Date(currentSemester.endDate);
+    
+    // 学期内の各曜日の授業日数を計算
+    weekdayNumbers.forEach(weekdayNum => {
+      if (weekdayNum >= 1 && weekdayNum <= 5) { // 月〜金のみ
+        let count = 0;
+        const current = new Date(semesterStart);
+        current.setHours(0, 0, 0, 0);
+        const end = new Date(semesterEnd);
+        end.setHours(23, 59, 59, 999);
+        while (current <= end) {
+          if (current.getDay() === weekdayNum) {
+            const dateStr = formatDateLocal(current);
+            if (classDays.includes(dateStr)) {
+              count++;
+            }
+          }
+          current.setDate(current.getDate() + 1);
+        }
+        weekdayClassCounts[weekdayNum] = count;
+      }
+    });
+    
+    const headerRow = document.createElement('div');
+    headerRow.className = 'calendar-header';
+    weekdays.forEach((day, index) => {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-header-cell';
+      
+      const dayLabel = document.createElement('div');
+      dayLabel.className = 'weekday-label';
+      dayLabel.textContent = day;
+      cell.appendChild(dayLabel);
+      
+      // 月〜金のみ授業数を表示
+      if (weekdayNumbers[index] >= 1 && weekdayNumbers[index] <= 5) {
+        const countLabel = document.createElement('div');
+        countLabel.className = 'weekday-count';
+        countLabel.textContent = `${weekdayClassCounts[weekdayNumbers[index]] || 0}回`;
+        cell.appendChild(countLabel);
+      }
+      
+      headerRow.appendChild(cell);
+    });
+    monthCalendar.appendChild(headerRow);
+    
+    // カレンダーの最初の日（月の最初の日曜日）
+    const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
+    const firstSunday = new Date(firstDay);
+    firstSunday.setDate(firstDay.getDate() - firstDay.getDay());
+    
+    // カレンダーの最後の日（月の最後の土曜日）
+    const lastDay = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+    const lastSaturday = new Date(lastDay);
+    lastSaturday.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+    
+    // カレンダー本体
+    const current = new Date(firstSunday);
+    while (current <= lastSaturday) {
+      const weekRow = document.createElement('div');
+      weekRow.className = 'calendar-week';
+      
+      for (let i = 0; i < 7; i++) {
+        const dateStr = formatDateLocal(current);
+        const isInMonth = current.getMonth() === month.getMonth();
+        const isInSemester = dateStr >= currentSemester.startDate && dateStr <= currentSemester.endDate;
+        const dayOfWeek = current.getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        
+        // 学期内の平日かどうか
+        const isWeekdayInSemester = isInSemester && !isWeekend;
+        
+        // 授業日かどうか（classDaysに含まれている = 授業日、含まれていない = 休み）
+        const isClassDay = isWeekdayInSemester ? classDays.includes(dateStr) : false;
+        const isHoliday = isWeekdayInSemester && !isClassDay;
+        
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day';
+        if (!isInMonth) cell.classList.add('other-month');
+        if (!isInSemester) cell.classList.add('out-of-semester');
+        if (isWeekend) cell.classList.add('weekend');
+        if (isClassDay) cell.classList.add('class-day');
+        if (isHoliday) cell.classList.add('holiday');
+        
+        cell.textContent = current.getDate();
+        cell.dataset.date = dateStr;
+        
+        // 学期内の平日のみクリック可能
+        if (isWeekdayInSemester) {
+          cell.addEventListener('click', () => {
+            toggleHoliday(dateStr);
+          });
+          cell.style.cursor = 'pointer';
+        } else if (!isInSemester) {
+          cell.style.cursor = 'not-allowed';
+        }
+        
+        weekRow.appendChild(cell);
+        current.setDate(current.getDate() + 1);
+      }
+      
+      monthCalendar.appendChild(weekRow);
+    }
+    
+    calendarsContainer.appendChild(monthCalendar);
+  }
+  
+  calendar.appendChild(calendarsContainer);
+}
+
+// 休みの切り替え関数（授業日 ↔ 休み）
+function toggleHoliday(dateStr) {
+  const currentSemester = getCurrentSemester();
+  if (!currentSemester) return;
+  
+  const classDays = currentSemester.classDays || [];
+  const index = classDays.indexOf(dateStr);
+  
+  if (index === -1) {
+    // 授業日に戻す（休みを解除）
+    classDays.push(dateStr);
+    classDays.sort();
+  } else {
+    // 休みにする（授業日から除外）
+    classDays.splice(index, 1);
+  }
+  
+  currentSemester.classDays = classDays;
+  saveSemesters();
+  
+  // カレンダーを再表示
+  renderClassDaysCalendar(currentCalendarMonth);
+}
+
+// 曜日の休みを一括設定/解除する関数
+function setWeekdayHolidayForCurrentMonth(weekday, month, setHoliday) {
+  const currentSemester = getCurrentSemester();
+  if (!currentSemester) return;
+  
+  const classDays = currentSemester.classDays || [];
+  const startDate = new Date(currentSemester.startDate);
+  const endDate = new Date(currentSemester.endDate);
+  
+  // 月の最初と最後の日
+  const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
+  const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+  
+  // 学期の範囲内で、指定された曜日の日付を取得
+  const current = new Date(Math.max(monthStart, startDate));
+  const end = new Date(Math.min(monthEnd, endDate));
+  
+  const datesToProcess = [];
+  current.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+  while (current <= end) {
+    if (current.getDay() === weekday) {
+      const dateStr = formatDateLocal(current);
+      datesToProcess.push(dateStr);
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  
+  // 一括設定/解除
+  datesToProcess.forEach(dateStr => {
+    const index = classDays.indexOf(dateStr);
+    if (setHoliday) {
+      // 休みに設定: 授業日から除外
+      if (index !== -1) classDays.splice(index, 1);
+    } else {
+      // 休みを解除: 授業日に戻す
+      if (index === -1) classDays.push(dateStr);
+    }
+  });
+  
+  classDays.sort();
+  currentSemester.classDays = classDays;
+  saveSemesters();
+  
+  // カレンダーを再表示
+  renderClassDaysCalendar(month);
+}
+
+// 全ての平日を授業日に戻す関数（休みを全て解除）
+function resetAllWeekdays() {
+  const currentSemester = getCurrentSemester();
+  if (!currentSemester) return;
+  
+  // 全ての平日を授業日に設定
+  const classDays = generateDefaultClassDays(currentSemester.startDate, currentSemester.endDate);
+  currentSemester.classDays = classDays;
+  
+  saveSemesters();
+  
+  // カレンダーを再表示
+  renderClassDaysCalendar(currentCalendarMonth);
+}
+// ============================================
+// Step1: 学期管理機能（ここまで）
+// ============================================
+
 // Firebase接続チェック（v11対応）
 function checkFirebase() {
   try {
@@ -112,13 +1521,27 @@ function initializeTimetable() {
 
 // 時間割データを読み込む関数（v11対応）
 function loadTimetable() {
-  if (!isFirebaseEnabled) return;
+  // Step2: 選択中の学期の時間割を読み込む
+  const currentSemester = getCurrentSemester();
+  if (currentSemester && currentSemester.timetable) {
+    generateTimetable(currentSemester.timetable);
+    return;
+  }
+  
+  // フォールバック: Firebaseから読み込み（既存の動作）
+  if (!isFirebaseEnabled) {
+    // localStorageからも読み込めない場合はデフォルトを使用
+    generateTimetable(initialTimetableData);
+    return;
+  }
   
   const timetableRef = window.firebase.ref(window.firebase.db, "tabler/timetable");
   window.firebase.onValue(timetableRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
       generateTimetable(data);
+    } else {
+      generateTimetable(initialTimetableData);
     }
   });
 }
@@ -126,6 +1549,9 @@ function loadTimetable() {
 // タスクを保存する関数（v11対応）
 function saveTask(period, day, title, taskData) {
   if (!isFirebaseEnabled) return;
+  
+  // 現在の学期IDを取得
+  const semesterId = currentSemesterId || null;
   
   const tasksRef = window.firebase.ref(window.firebase.db, "tabler/tasks");
   const newTaskRef = window.firebase.push(tasksRef);
@@ -136,6 +1562,7 @@ function saveTask(period, day, title, taskData) {
     content: taskData.content,
     dueDate: taskData.dueDate,
     taskType: taskData.taskType,
+    semesterId: semesterId, // 学期IDを追加
     createdAt: Date.now()
   });
 }
@@ -384,10 +1811,21 @@ function loadTasks() {
       // 古い完了タスクを自動削除
       cleanupOldCompletedTasks(data);
       
-      window.tasks = data;
-      displayTasks(data);
-      updateTaskNumbers(data);
-      updateIncompleteTasksCount(data);
+      // 選択中の学期のタスクのみフィルタリング
+      const filteredTasks = {};
+      if (currentSemesterId) {
+        Object.entries(data).forEach(([taskId, task]) => {
+          // semesterIdが一致するか、semesterIdが未設定の古いタスクは表示しない
+          if (task.semesterId === currentSemesterId) {
+            filteredTasks[taskId] = task;
+          }
+        });
+      }
+      
+      window.tasks = filteredTasks;
+      displayTasks(filteredTasks);
+      updateTaskNumbers(filteredTasks);
+      updateIncompleteTasksCount(filteredTasks);
     } else {
       // データが存在しない場合
       window.tasks = {};
@@ -401,13 +1839,16 @@ function loadTasks() {
 // 進捗データを読み込む関数
 function loadSubjects() {
   return new Promise((resolve) => {
-    if (subjectsData !== null) {
+    if (!currentSemesterId) {
+      // 学期が選択されていない場合は空のデータを返す
+      subjectsData = [];
       resolve(subjectsData);
       return;
     }
     
     if (isFirebaseEnabled) {
-      const subjectsRef = window.firebase.ref(window.firebase.db, 'subjects');
+      // 学期ごとの進捗データを読み込む
+      const subjectsRef = window.firebase.ref(window.firebase.db, `subjects/${currentSemesterId}`);
       window.firebase.get(subjectsRef)
         .then((snapshot) => {
           const data = snapshot.val();
@@ -419,17 +1860,25 @@ function loadSubjects() {
               name: subject.name,
               dataId: subject.dataId || subject.name || subject.id,
               progress: subject.progress || 0,
+              semesterId: currentSemesterId,
               lastUpdated: subject.lastUpdated || null
             }));
           } else {
-            subjectsData = getUniqueSubjects().map(s => ({ 
-              id: s.id, 
-              name: s.name, 
-              dataId: s.dataId,
-              progress: 0, 
-              lastUpdated: null 
-            }));
-            saveSubjects(subjectsData);
+            // データが存在しない場合は、現在の時間割から科目を取得
+            const currentSemester = getCurrentSemester();
+            if (currentSemester && currentSemester.timetable) {
+              subjectsData = getUniqueSubjects().map(s => ({ 
+                id: s.id, 
+                name: s.name, 
+                dataId: s.dataId,
+                progress: 0,
+                semesterId: currentSemesterId,
+                lastUpdated: null 
+              }));
+              saveSubjects(subjectsData);
+            } else {
+              subjectsData = [];
+            }
           }
           resolve(subjectsData);
         })
@@ -439,20 +1888,28 @@ function loadSubjects() {
             id: s.id, 
             name: s.name, 
             dataId: s.dataId,
-            progress: 0, 
+            progress: 0,
+            semesterId: currentSemesterId,
             lastUpdated: null 
           }));
           resolve(subjectsData);
         });
     } else {
-      subjectsData = getUniqueSubjects().map(s => ({ 
-        id: s.id, 
-        name: s.name, 
-        dataId: s.dataId,
-        progress: 0, 
-        totalTime: 0, 
-        lastUpdated: null 
-      }));
+      // localStorageの場合も学期ごとに管理
+      const currentSemester = getCurrentSemester();
+      if (currentSemester && currentSemester.timetable) {
+        subjectsData = getUniqueSubjects().map(s => ({ 
+          id: s.id, 
+          name: s.name, 
+          dataId: s.dataId,
+          progress: 0,
+          semesterId: currentSemesterId,
+          totalTime: 0, 
+          lastUpdated: null 
+        }));
+      } else {
+        subjectsData = [];
+      }
       resolve(subjectsData);
     }
   });
@@ -462,29 +1919,69 @@ function loadSubjects() {
 function saveSubjects(subjects) {
   subjectsData = subjects;
   
+  if (!currentSemesterId) {
+    console.warn('学期が選択されていないため、進捗データを保存できません');
+    return;
+  }
+  
   if (isFirebaseEnabled) {
-    const subjectsRef = window.firebase.ref(window.firebase.db, 'subjects');
+    // 学期ごとに進捗データを保存
+    const subjectsRef = window.firebase.ref(window.firebase.db, `subjects/${currentSemesterId}`);
     window.firebase.set(subjectsRef, subjectsData)
       .then(() => {
       })
       .catch((error) => {
         console.error('Firebaseへの保存に失敗:', error);
       });
+  } else {
+    // localStorageの場合も学期ごとに保存
+    const key = `subjects_${currentSemesterId}`;
+    localStorage.setItem(key, JSON.stringify(subjectsData));
   }
 }
 
 // ユニークな科目リストを取得（Firebaseデータベースベース）
 function getUniqueSubjects() {
-  const subjects = subjectsData || [];
+  // 現在の学期の時間割から科目を取得
+  const currentSemester = getCurrentSemester();
+  if (!currentSemester || !currentSemester.timetable) {
+    return [];
+  }
   
-  // Firebaseデータベースに実際に存在する科目のみを返す
-  const uniqueSubjects = subjects.map(subject => ({
-    id: subject.id,
-    name: subject.name,
-    dataId: subject.dataId
-  }));
+  const uniqueSubjectsMap = new Map();
+  const timetable = currentSemester.timetable;
+  const days = ['月', '火', '水', '木', '金'];
   
-  return uniqueSubjects;
+  // 時間割から科目を抽出
+  for (let periodIndex = 0; periodIndex < timetable.length; periodIndex++) {
+    for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
+      const subjectName = timetable[periodIndex] && timetable[periodIndex][dayIndex];
+      if (subjectName && subjectName.trim() !== '') {
+        // 既に存在する場合はスキップ
+        if (!uniqueSubjectsMap.has(subjectName)) {
+          // subjectsMasterから検索
+          const subject = subjectsMaster.find(s => s.name === subjectName);
+          if (subject) {
+            uniqueSubjectsMap.set(subjectName, {
+              id: subject.id,
+              name: subject.name,
+              dataId: subject.dataId
+            });
+          } else {
+            // subjectsMasterに見つからない場合は、動的に作成
+            const dataId = subjectName.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '-');
+            uniqueSubjectsMap.set(subjectName, {
+              id: dataId,
+              name: subjectName,
+              dataId: dataId
+            });
+          }
+        }
+      }
+    }
+  }
+  
+  return Array.from(uniqueSubjectsMap.values());
 }
 function getEvaluationByName(name) {
   if (!evaluationsData) return null;
@@ -505,6 +2002,15 @@ function getEvaluationByName(name) {
 
 // 授業日データを取得
 function getClassDays() {
+  // Step2: 選択中の学期の授業日を返す
+  const currentSemester = getCurrentSemester();
+  if (currentSemester && currentSemester.classDays) {
+    return currentSemester.classDays.map(date => ({
+      date: date,
+      dayOfWeek: ['日','月','火','水','木','金','土'][new Date(date).getDay()] + '曜日'
+    }));
+  }
+  // フォールバック: 既存のclassDays.jsから取得
   return typeof classDays !== 'undefined' ? classDays : [];
 }
 
@@ -912,6 +2418,7 @@ function updateTimetableProgressBars() {
             dataId: subject.dataId,
             progress: 0,
             totalTime: 0,
+            semesterId: currentSemesterId, // 学期IDを設定
             lastUpdated: new Date().toISOString()
           };
           subjects.push(s);
@@ -1166,44 +2673,56 @@ function setDate(type) {
   const modalSubtitle = document.getElementById('modalSubtitle').textContent;
   const [period, day] = modalSubtitle.split(' ');
   
-  const dayMap = { '月': 1, '火': 2, '水': 3, '木': 4, '金': 5 };
-  const subjectDay = dayMap[day];
+  const dayMap = { '月': '月曜日', '火': '火曜日', '水': '水曜日', '木': '木曜日', '金': '金曜日' };
+  const weekday = dayMap[day];
   
-  const today = new Date();
-  const jstToday = new Date(today.getTime() + (9 * 60 * 60 * 1000));
-  const currentDay = jstToday.getDay();
-  
-  let daysUntilNextClass;
-  if (currentDay === 0) {
-    daysUntilNextClass = subjectDay;
-  } else if (currentDay === 6) {
-    daysUntilNextClass = subjectDay + 1;
-  } else {
-    daysUntilNextClass = subjectDay - currentDay;
+  if (!weekday) {
+    console.error('曜日が正しく取得できませんでした:', day);
+    return;
   }
   
-  const deadline = new Date(jstToday);
+  // 該当する曜日の授業日を取得
+  const classDays = getClassDaysByWeekday(weekday);
+  if (classDays.length === 0) {
+    console.error('授業日が見つかりませんでした:', weekday);
+    return;
+  }
+  
+  const todayISO = getTodayISO();
+  
+  // 今日以降の授業日を取得
+  const futureClassDays = classDays.filter(d => d.date >= todayISO).sort((a, b) => a.date.localeCompare(b.date));
+  
+  let targetDate;
   switch (type) {
     case 'previous':
-      deadline.setDate(jstToday.getDate() + daysUntilNextClass - 1);
+      // 前回の授業日（今日より前の最後の授業日）
+      const pastClassDays = classDays.filter(d => d.date < todayISO).sort((a, b) => b.date.localeCompare(a.date));
+      targetDate = pastClassDays.length > 0 ? pastClassDays[0].date : futureClassDays[0]?.date;
       break;
     case 'current':
-      deadline.setDate(jstToday.getDate() + daysUntilNextClass);
+      // 今回の授業日（今日以降の最初の授業日）
+      targetDate = futureClassDays[0]?.date || classDays[classDays.length - 1].date;
       break;
     case 'next':
-      deadline.setDate(jstToday.getDate() + daysUntilNextClass + 1);
+      // 次の授業日
+      targetDate = futureClassDays[1]?.date || futureClassDays[0]?.date || classDays[classDays.length - 1].date;
       break;
     case 'nextWeek':
-      deadline.setDate(jstToday.getDate() + daysUntilNextClass + 6);
+      // 来週の授業日（7日後以降の最初の授業日）
+      const nextWeekDate = new Date(todayISO);
+      nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+      const nextWeekISO = formatDateLocal(nextWeekDate);
+      const nextWeekClassDays = classDays.filter(d => d.date >= nextWeekISO).sort((a, b) => a.date.localeCompare(b.date));
+      targetDate = nextWeekClassDays[0]?.date || futureClassDays[futureClassDays.length - 1]?.date || classDays[classDays.length - 1].date;
       break;
+    default:
+      targetDate = futureClassDays[0]?.date || classDays[classDays.length - 1].date;
   }
   
-  const year = deadline.getFullYear();
-  const month = String(deadline.getMonth() + 1).padStart(2, '0');
-  const date = String(deadline.getDate()).padStart(2, '0');
-  const formattedDate = `${year}-${month}-${date}`;
-  
-  document.getElementById('taskDate').value = formattedDate;
+  if (targetDate) {
+    document.getElementById('taskDate').value = targetDate;
+  }
 }
 
 // 進捗不足タスクを生成する関数
@@ -1252,6 +2771,11 @@ function getDataIdFromSubjectName(subjectName) {
 
 // 進捗を更新する共通関数
 async function updateProgressForSubject(subjectName, increment = 1) {
+  if (!currentSemesterId) {
+    console.warn('学期が選択されていないため、進捗を更新できません');
+    return false;
+  }
+  
   const subjects = subjectsData || await loadSubjects();
   const dataId = getDataIdFromSubjectName(subjectName);
   
@@ -1270,6 +2794,7 @@ async function updateProgressForSubject(subjectName, increment = 1) {
       dataId: dataId,
       progress: 0,
       totalTime: 0,
+      semesterId: currentSemesterId, // 学期IDを設定
       lastUpdated: new Date().toISOString()
     };
     subjects.push(s);
@@ -1286,6 +2811,7 @@ async function updateProgressForSubject(subjectName, increment = 1) {
     }
     
     s.progress = newProgress;
+    s.semesterId = currentSemesterId; // 学期IDを確実に設定
     s.lastUpdated = new Date().toISOString();
     saveSubjects(subjects);
     updateTimetableProgressBars();
@@ -1731,6 +3257,11 @@ function wireEvents() {
       if (tab.dataset.tab === 'evaluations') {
         loadEvaluationsIfNeeded();
       }
+      
+      // Step1: 管理タブが選択されたときに学期一覧を再表示
+      if (tab.dataset.tab === 'manage') {
+        renderSemestersList();
+      }
     });
   });
 
@@ -1924,39 +3455,18 @@ async function boot() {
   // Firebase接続チェック
   checkFirebase();
   
-  // データを読み込み
-  await loadSubjects();
+  // Step1: 学期データを読み込み
+  await loadSemesters();
+  renderSemesterSelector();
   
-  
-  // CS科目のデータを特別に確認
-  let csSubject = subjectsData?.find(s => s.name === 'CS' || s.dataId === 'CS');
-  if (csSubject) {
-  } else {
-    
-    // CS科目のデータを作成
-    const newCSSubject = {
-      id: 'CS',
-      name: 'CS',
-      dataId: 'CS',
-      progress: 0,
-      totalTime: 0,
-      lastUpdated: new Date().toISOString()
-    };
-    
-    if (!subjectsData) {
-      subjectsData = [];
-    }
-    subjectsData.push(newCSSubject);
-    saveSubjects(subjectsData);
-    console.log('✅ CS科目データを作成しました:', newCSSubject);
+  // 学期が選択されている場合、タスクと進捗を読み込み
+  if (currentSemesterId) {
+    loadTasks();
+    await loadSubjects();
   }
   
-  // 月曜日の授業日を確認
-  const mondayDays = getClassDaysByWeekday('月曜日');
-  console.log('📅 月曜日の全授業日:', mondayDays.map(d => d.date));
-  const pastMondayDays = mondayDays.filter(d => d.date <= todayISO);
-  console.log('📅 月曜日の過去授業日:', pastMondayDays.map(d => d.date));
-  console.log('📅 月曜日の週数:', pastMondayDays.length);
+  // Step1: 管理画面を初期化
+  initializeManageTab();
   
   // 時間割を初期化・読み込み
   initializeTimetable();
@@ -1980,8 +3490,6 @@ async function boot() {
       updateIncompleteTasksCount(window.tasks);
     }
     
-    // CS科目の最終確認
-    const finalCSSubject = subjectsData?.find(s => s.name === 'CS' || s.dataId === 'CS');
   }, 1000);
   
   // イベントリスナー設定

@@ -71,6 +71,7 @@
       <div class="tabs">
         <div class="tab active" data-tab="timetable">時間割</div>
         <div class="tab" data-tab="tasks">タスク</div>
+        <div class="tab" data-tab="manage">管理</div>
       </div>
       <div class="segmented-toggle" id="modeSegment">
         <button type="button" class="seg-btn active" data-mode="progress">進捗</button>
@@ -99,6 +100,23 @@
           <!-- 完了タスクはここに表示 -->
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 管理タブ -->
+  <div class="tab-content" id="manage-tab">
+    <div class="manage-container">
+      <!-- 学期管理セクション -->
+      <section class="manage-section">
+        <h2 class="manage-section-title">学期管理</h2>
+        <div class="manage-actions">
+          <button id="addSemesterBtn" class="btn primary">学期を追加</button>
+        </div>
+        <div id="semestersList" class="semesters-list">
+          <!-- 学期一覧はここに表示 -->
+        </div>
+      </section>
+      
     </div>
   </div>
 
@@ -161,6 +179,64 @@
 
       <div class="modal-actions">
         <button id="cancelModalBtn" class="btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 授業日管理モーダル -->
+  <div id="classDaysModal" class="modal">
+    <div class="modal-content large-modal">
+      <div class="modal-header">
+        <h2>授業日管理</h2>
+        <button class="modal-close-btn" id="closeClassDaysModal">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="classdays-simple-header">
+          <div id="semesterInfo" class="semester-info-simple"></div>
+          <div id="semesterDateEdit" class="semester-date-edit" style="display: none;">
+            <div class="date-edit-group">
+              <label for="editStartDate">開始日:</label>
+              <input type="date" id="editStartDate" class="date-input">
+            </div>
+            <div class="date-edit-group">
+              <label for="editEndDate">終了日:</label>
+              <input type="date" id="editEndDate" class="date-input">
+            </div>
+            <div class="date-edit-actions">
+              <button id="saveDatesBtn" class="btn btn-small btn-primary">保存</button>
+              <button id="cancelDatesBtn" class="btn btn-small">キャンセル</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="calendar-controls-simple">
+          <button id="prevMonthBtn" class="btn btn-small">◀</button>
+          <span id="currentMonthDisplay" class="month-display"></span>
+          <button id="nextMonthBtn" class="btn btn-small">▶</button>
+        </div>
+        
+        <div id="classDaysCalendar" class="class-days-calendar">
+          <!-- カレンダーはここに表示 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 時間割編集モーダル -->
+  <div id="timetableModal" class="modal">
+    <div class="modal-content large-modal">
+      <div class="modal-header">
+        <h2>時間割管理</h2>
+        <button class="modal-close-btn" id="closeTimetableModal">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="timetableEditor" class="timetable-editor">
+          <!-- 時間割エディタはここに表示 -->
+        </div>
+        <div class="timetable-actions">
+          <button id="saveTimetableBtn" class="btn primary">保存</button>
+          <button id="cancelTimetableBtn" class="btn">キャンセル</button>
+        </div>
       </div>
     </div>
   </div>
