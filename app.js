@@ -3308,11 +3308,22 @@ function wireEvents() {
     
     const taskContent = document.getElementById('taskContent').value;
     const selectedTaskType = document.querySelector('.task-type-btn.active')?.dataset.type;
+
+    // タスクタイプの決定ロジック
+    let taskType = '課題'; // デフォルト値
+    if (selectedTaskType) {
+      // ボタンで選択されている場合はそれを使用
+      taskType = selectedTaskType;
+    } else if (isEditMode && taskId && window.tasks && window.tasks[taskId]) {
+      // 編集モードでボタンが選択されていない場合のみ、既存のタスクタイプを使用
+      taskType = window.tasks[taskId].taskType || '課題';
+    }
     
+    // content と taskType を独立して扱う
     const taskData = {
-      content: taskContent || (selectedTaskType ? selectedTaskType : '課題'),
+      content: taskContent || '',
       dueDate: document.getElementById('taskDate').value,
-      taskType: taskContent ? null : selectedTaskType
+      taskType: taskType
     };
 
     if (isEditMode && taskId) {
