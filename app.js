@@ -1561,7 +1561,7 @@ function saveTask(period, day, title, taskData) {
     title: title,
     content: taskData.content,
     dueDate: taskData.dueDate,
-    taskType: taskData.taskType,
+    taskType: taskData.taskType || '課題', // デフォルト値を設定
     semesterId: semesterId, // 学期IDを追加
     createdAt: Date.now()
   });
@@ -1590,6 +1590,7 @@ function updateTask(taskId, taskData) {
   const updatedTask = {
     ...existingTask,
     ...taskData,
+    taskType: taskData.taskType || existingTask?.taskType || '課題', // デフォルト値を設定
     updatedAt: Date.now()
   };
   
