@@ -1,4 +1,4 @@
-/* 統合スタイル: @tablerのカラフルなデザインをベースに@platformの要素を統合 */
+/* Unified styles: Based on @tabler's colorful design with @platform elements integrated */
 
 body {
   margin: 0;
@@ -8,7 +8,7 @@ body {
   animation: fadeIn 0.3s ease-out;
 }
 
-/* 統合ヘッダー (統計情報 + タブ) */
+/* Unified header (statistics + tabs) */
 .app-header {
   display: flex;
   align-items: center;
@@ -28,7 +28,7 @@ body {
   gap: 20px;
 }
 
-/* Step1: 学期セレクトボックスのスタイル（削除: ヘッダーから削除） */
+/* Step1: Semester select box styles (removed from header) */
 
 .header-center {
   display: flex;
@@ -148,7 +148,7 @@ body {
   text-align: center;
 }
 
-/* 時間割 (@tablerのデザインを維持) */
+/* Timetable (keeps @tabler design) */
 .timetable {
   display: grid;
   grid-template-columns: 80px repeat(5, 1fr);
@@ -189,7 +189,7 @@ body {
   line-height: 1.2;
 }
 
-/* 進捗バー (@platformから統合) */
+/* Progress bar (integrated from @platform) */
 .progress {
   height: 4px;
   background: #E0E0E0;
@@ -206,7 +206,7 @@ body {
   transition: width 0.2s ease, background 0.2s ease;
 }
 
-/* 進捗バーの色分け */
+/* Progress bar color variations */
 .progress-bar.pct-0 { background: #d1d5db; }
 .progress-bar.pct-1 { background: linear-gradient(90deg, #ef4444, #f87171); }
 .progress-bar.pct-2 { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
@@ -220,13 +220,13 @@ body {
   text-align: center;
 }
 
-/* 評価表示モードでは進捗UIを強制的に隠す */
+/* In evaluation display mode, always hide progress UI */
 .evaluation-mode .progress,
 .evaluation-mode .progress-text {
   display: none !important;
 }
 
-/* 学習時間表示 (@platformから統合) */
+/* Study time display (integrated from @platform) */
 .study-time {
   position: absolute;
   bottom: 3px;
@@ -237,14 +237,14 @@ body {
   display: block;
 }
 
-/* 学習時間の色分け */
+/* Study time color variations */
 .time-none { color: #596275; }
 .time-low { color: #92400e; }
 .time-medium { color: #c2410c; }
 .time-high { color: #dc2626; }
 .time-very-high { color: #166534; }
 
-/* タスク数バッジ (@tablerから維持) */
+/* Task count badge (kept from @tabler) */
 .number-circle {
   position: absolute;
   top: 3px;
@@ -263,7 +263,7 @@ body {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* 形状の定義 */
+/* Shape definitions */
 .number-circle.shape-circle {
   border-radius: 50%;
   width: 24px;
@@ -288,7 +288,7 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* 期限による色分け */
+/* Color coding by deadline */
 .number-circle.due-date-overdue {
   background: linear-gradient(135deg, #D32F2F, #B71C1C);
   box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
@@ -314,7 +314,7 @@ body {
   box-shadow: 0 2px 8px rgba(120, 144, 156, 0.3);
 }
 
-/* ヘッダー (@tablerのカラフルなデザイン) */
+/* Header (colorful @tabler design) */
 .header {
   background: linear-gradient(135deg, #1A237E, #283593);
   color: white;
@@ -384,22 +384,22 @@ body {
   box-shadow: inset 0 0 0 1px rgba(59,130,246,0.15);
 }
 
-/* 科目ごとの背景色 (@tablerから維持) */
+/* Subject-specific background colors (kept from @tabler) */
 .subject-colors-cs { background-color: #E3F2FD; }
-.subject-colors-微分積分 { background-color: #F3E5F5; }
-.subject-colors-Cプロ { background-color: #FFF8E1; }
-.subject-colors-実験 { background-color: #E0F7FA; }
-.subject-colors-線形代数 { background-color: #F1F8E9; }
-.subject-colors-中国語IA { background-color: #FCE4EC; }
-.subject-colors-中国語IB { background-color: #FCE4EC; }
-.subject-colors-憲法IB { background-color: #EDE7F6; }
-.subject-colors-電磁気学A { background-color: #FFF3E0; }
-.subject-colors-電生 { background-color: #E8F5E9; }
-.subject-colors-生命科学A { background-color: #E1F5FE; }
-.subject-colors-力学A { background-color: #F3E5F5; }
-.subject-colors-ALC { background-color: #E8EAF6; }
+.subject-colors-calculus { background-color: #F3E5F5; }
+.subject-colors-c-programming { background-color: #FFF8E1; }
+.subject-colors-experiment { background-color: #E0F7FA; }
+.subject-colors-linear-algebra { background-color: #F1F8E9; }
+.subject-colors-chinese-ia { background-color: #FCE4EC; }
+.subject-colors-chinese-ib { background-color: #FCE4EC; }
+.subject-colors-constitution-ib { background-color: #EDE7F6; }
+.subject-colors-electromagnetism-a { background-color: #FFF3E0; }
+.subject-colors-bio-electronics { background-color: #E8F5E9; }
+.subject-colors-life-science-a { background-color: #E1F5FE; }
+.subject-colors-mechanics-a { background-color: #F3E5F5; }
+.subject-colors-alc { background-color: #E8EAF6; }
 
-/* タブ (ヘッダー内統合) */
+/* Tabs (integrated into header) */
 .tabs {
   display: flex;
   background-color: #F8F9FA;
@@ -439,7 +439,7 @@ body {
   display: block;
 }
 
-/* モーダル (@tablerのデザインをベースに拡張) */
+/* Modal (extended from @tabler design) */
 .modal {
   display: none;
   position: fixed;
@@ -531,7 +531,7 @@ body {
   font-size: 0.9em;
 }
 
-/* 統合モーダルセクション */
+/* Unified modal section */
 .progress-section {
   margin-bottom: 20px;
 }
@@ -583,7 +583,7 @@ body {
   border-radius: 1px;
 }
 
-/* フォーム要素 (@tablerのスタイルを維持) */
+/* Form elements (keeps @tabler styles) */
 .form-group {
   margin-bottom: 16px;
 }
@@ -618,7 +618,7 @@ body {
   outline: none;
 }
 
-/* 年度入力フィールドのスタイル */
+/* Year input field styles */
 .year-input-wrapper {
   position: relative;
   display: flex;
@@ -711,7 +711,7 @@ body {
   box-shadow: 0 6px 16px rgba(67, 160, 71, 0.4);
 }
 
-/* 進捗管理セクション (@platformから統合) - プログレスバー部分は削除 */
+/* Progress management section (integrated from @platform) - progress bar part removed */
 
 .action-buttons {
   display: flex;
@@ -743,11 +743,11 @@ body {
 }
 
 .btn.primary.large {
-  flex: 2; /* 理解ボタンを2倍の幅に */
+  flex: 2; /* Make the "Understood" button twice as wide */
 }
 
 .btn.secondary.large {
-  flex: 1; /* 戻すボタンは通常の幅 */
+  flex: 1; /* Keep the "Undo" button normal width */
 }
 
 .btn.secondary {
@@ -767,7 +767,7 @@ body {
   box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
 }
 
-/* 学習時間UIは削除 */
+/* Study time UI has been removed */
 .time-selector-section { display: none; }
 
 .time-selector-section label { display: none; }
@@ -800,14 +800,14 @@ body {
   margin-top: 20px;
 }
 
-/* タスク一覧 (@tablerから維持) */
+/* Task list (kept from @tabler) */
 .task-list {
   max-width: 1400px;
   margin: 20px auto;
   padding: 0 20px;
 }
 
-/* タスクを横並びで表示するグリッド */
+/* Grid layout for horizontally aligned tasks */
 .tasks-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -832,7 +832,7 @@ body {
   box-sizing: border-box;
 }
 
-/* モバイル表示時も2カラムを維持（gapを小さく） */
+/* Keep two columns even on mobile (with smaller gap) */
 @media (max-width: 768px) {
   .tasks-grid {
     grid-template-columns: 1fr 1fr;
@@ -859,7 +859,7 @@ body {
     max-height: 64px;
   }
 
-  /* 進捗不足タスクを中央に表示 */
+  /* Center tasks with insufficient progress */
   .progress-deficit-task .task-checkbox-spacer {
     display: none !important;
   }
@@ -893,7 +893,7 @@ body {
     min-width: 70px;
   }
 
-  /* 編集ボタンのモバイルスタイル */
+  /* Mobile styles for the edit button */
   .task-edit-btn {
     font-size: 10px;
     padding: 3px 6px;
@@ -908,7 +908,7 @@ body {
   }
 }
 
-/* タスクポップアップ */
+/* Task popup */
 .task-popup {
   position: fixed;
   top: 0;
@@ -981,7 +981,7 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* 進捗不足タスクのスタイル */
+/* Styles for tasks with insufficient progress */
 .progress-deficit-task {
   background: white;
 }
@@ -1073,7 +1073,7 @@ body {
   cursor: not-allowed;
 }
 
-/* PC表示時の進捗不足タスクの改善 */
+/* Improve layout of tasks with insufficient progress on desktop */
 @media (min-width: 769px) {
   .progress-deficit-task {
     padding: 18px 15px;
@@ -1240,7 +1240,7 @@ body {
 }
 
 
-/* 期限の色分け */
+/* Deadline-based color variations */
 .due-date {
   padding: 2px 8px;
   border-radius: 4px;
@@ -1299,7 +1299,7 @@ body {
   text-decoration: line-through;
 }
 
-/* アニメーション (@tablerから維持) */
+/* Animations (kept from @tabler) */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -1332,7 +1332,7 @@ body {
   100% { background-position: 200% 0; }
 }
 
-/* レスポンシブ対応 (@platformから統合) */
+/* Responsive behavior (integrated from @platform) */
 @media (max-width: 768px) {
   .app-header {
     flex-direction: column;
@@ -1496,7 +1496,7 @@ body {
     grid-template-columns: 1fr;
   }
 
-  /* 非常に小さい画面でも2カラムを維持（gapをさらに小さく） */
+  /* Keep two columns even on very small screens (with even smaller gap) */
   .tasks-grid {
     gap: 8px;
   }
@@ -1521,7 +1521,7 @@ body {
     max-height: 60px;
   }
 
-  /* 進捗不足タスクを中央に表示 */
+  /* Center tasks with insufficient progress */
   .progress-deficit-task .task-checkbox-spacer {
     display: none !important;
   }
@@ -1555,7 +1555,7 @@ body {
     min-width: 60px;
   }
 
-  /* 編集ボタンの非常に小さい画面用スタイル */
+  /* Edit button styles for very small screens */
   .task-edit-btn {
     font-size: 9px;
     padding: 2px 5px;
@@ -1570,7 +1570,7 @@ body {
   }
 }
 
-/* Step1: 管理画面のスタイル */
+/* Step1: Management screen styles */
 .manage-container {
   max-width: 1200px;
   margin: 20px auto;
@@ -1720,7 +1720,7 @@ body {
   font-size: 14px;
 }
 
-/* Step2: 授業日管理カレンダーのスタイル */
+/* Step2: Class day management calendar styles */
 .classdays-header {
   display: flex;
   justify-content: space-between;
@@ -2180,7 +2180,7 @@ body {
 }
 
 .calendar-day.holiday::after {
-  content: '休';
+  content: 'Off';
   position: absolute;
   top: 2px;
   right: 4px;
@@ -2193,7 +2193,7 @@ body {
   background: #FFF9E6;
 }
 
-/* Step2: 時間割エディタのスタイル */
+/* Step2: Timetable editor styles */
 .timetable-editor-container {
   overflow-x: auto;
 }
@@ -2279,7 +2279,7 @@ body {
   border-top: 1px solid #E0E0E0;
 }
 
-/* モバイル対応 */
+/* Mobile support */
 @media (max-width: 768px) {
   .semesters-list {
     grid-template-columns: 1fr;
@@ -2372,7 +2372,7 @@ body {
   }
 }
 
-/* タッチフィードバック */
+/* Touch feedback */
 @media (max-width: 1023px) {
   .cell:active,
   .task-item:active,

@@ -401,7 +401,7 @@ function renderSemestersList() {
   semestersList.innerHTML = '';
   
   if (semestersData.length === 0) {
-    semestersList.innerHTML = '<p class="empty-message">学期が登録されていません</p>';
+    semestersList.innerHTML = '<p class="empty-message">No semesters registered</p>';
     return;
   }
   
@@ -415,23 +415,23 @@ function renderSemestersList() {
     semesterCard.innerHTML = `
       <div class="semester-card-header">
         <h3 class="semester-name">${semester.name}</h3>
-        ${semester.id === currentSemesterId ? '<span class="current-badge">選択中</span>' : ''}
+        ${semester.id === currentSemesterId ? '<span class="current-badge">Current</span>' : ''}
       </div>
       <div class="semester-card-body">
         <div class="semester-info">
-          <span class="info-label">開始日:</span>
+          <span class="info-label">Start Date:</span>
           <span class="info-value">${semester.startDate}</span>
         </div>
         <div class="semester-info">
-          <span class="info-label">終了日:</span>
+          <span class="info-label">End Date:</span>
           <span class="info-value">${semester.endDate}</span>
         </div>
       </div>
       <div class="semester-card-actions">
-        <button class="btn btn-small btn-select" data-semester-id="${semester.id}">選択</button>
-        <button class="btn btn-small btn-classdays" data-semester-id="${semester.id}">授業日</button>
-        <button class="btn btn-small btn-timetable" data-semester-id="${semester.id}">時間割</button>
-        <button class="btn btn-small btn-delete" data-semester-id="${semester.id}">削除</button>
+        <button class="btn btn-small btn-select" data-semester-id="${semester.id}">Select</button>
+        <button class="btn btn-small btn-classdays" data-semester-id="${semester.id}">Class Days</button>
+        <button class="btn btn-small btn-timetable" data-semester-id="${semester.id}">Timetable</button>
+        <button class="btn btn-small btn-delete" data-semester-id="${semester.id}">Delete</button>
       </div>
     `;
     
@@ -472,7 +472,7 @@ function renderSemestersList() {
     // 削除ボタン
     const deleteBtn = semesterCard.querySelector('.btn-delete');
     deleteBtn.addEventListener('click', () => {
-      if (confirm(`「${semester.name}」を削除しますか？`)) {
+      if (confirm(`Delete semester "${semester.name}"?`)) {
         deleteSemester(semester.id);
         renderSemestersList();
         renderSemesterSelector();
@@ -491,7 +491,7 @@ function showClassDaysManagement() {
   const currentSemester = getCurrentSemester();
   
   if (!currentSemester) {
-    alert('学期を選択してください');
+    alert('Please select a semester');
     return;
   }
   
@@ -557,8 +557,8 @@ function renderSemesterInfoSimple(semester) {
   
   infoEl.innerHTML = `
     <span class="semester-name-simple">${semester.name}</span>
-    <span class="semester-dates-simple">${semester.startDate} 〜 ${semester.endDate}</span>
-    <button id="editDatesBtn" class="btn-edit-dates-simple">編集</button>
+    <span class="semester-dates-simple">${semester.startDate} - ${semester.endDate}</span>
+    <button id="editDatesBtn" class="btn-edit-dates-simple">Edit</button>
   `;
   
   // 編集ボタンのイベントリスナー
@@ -577,13 +577,13 @@ function renderSemesterInfo(semester) {
   
   infoEl.innerHTML = `
     <div class="semester-info-item">
-      <span class="info-label">学期:</span>
+      <span class="info-label">Semester:</span>
       <span class="info-value">${semester.name}</span>
     </div>
     <div class="semester-info-item">
-      <span class="info-label">期間:</span>
-      <span class="info-value">${semester.startDate} 〜 ${semester.endDate}</span>
-      <button id="editDatesBtn" class="btn-edit-dates">編集</button>
+      <span class="info-label">Period:</span>
+      <span class="info-value">${semester.startDate} - ${semester.endDate}</span>
+      <button id="editDatesBtn" class="btn-edit-dates">Edit</button>
     </div>
   `;
   
@@ -606,7 +606,7 @@ function showDateEditForm(semester) {
   // 最新の学期データを取得
   const currentSemester = getCurrentSemester();
   if (!currentSemester) {
-    alert('学期が選択されていません');
+    alert('No semester selected');
     return;
   }
   
@@ -662,12 +662,12 @@ function saveSemesterDates(semester) {
   const newEndDate = endDateInput.value;
   
   if (!newStartDate || !newEndDate) {
-    alert('開始日と終了日を入力してください');
+    alert('Please enter both start and end dates');
     return;
   }
   
   if (newStartDate > newEndDate) {
-    alert('開始日は終了日より前である必要があります');
+    alert('The start date must be earlier than the end date');
     return;
   }
   
@@ -678,7 +678,7 @@ function saveSemesterDates(semester) {
   });
   
   if (!updatedSemester) {
-    alert('学期の更新に失敗しました');
+    alert('Failed to update semester');
     return;
   }
   
@@ -733,15 +733,15 @@ function renderClassDaysStats(semester) {
   statsEl.innerHTML = `
     <div class="stat-item">
       <span class="stat-value">${classDaysCount}</span>
-      <span class="stat-label">授業日</span>
+      <span class="stat-label">Class Days</span>
     </div>
     <div class="stat-item">
       <span class="stat-value">${holidaysCount}</span>
-      <span class="stat-label">休日</span>
+      <span class="stat-label">Holidays</span>
     </div>
     <div class="stat-item">
       <span class="stat-value">${weekdaysCount}</span>
-      <span class="stat-label">平日合計</span>
+      <span class="stat-label">Total Weekdays</span>
     </div>
   `;
 }
@@ -753,7 +753,7 @@ function showTimetableManagement() {
   
   const currentSemester = getCurrentSemester();
   if (!currentSemester) {
-    alert('学期を選択してください');
+    alert('Please select a semester');
     return;
   }
   
@@ -1027,35 +1027,35 @@ function createSemesterModal() {
   modal.innerHTML = `
     <div class="modal-content">
       <div class="modal-header">
-        <h2 id="semesterModalTitle">学期を追加</h2>
+        <h2 id="semesterModalTitle">Add Semester</h2>
       </div>
       <form id="semesterForm">
         <input type="hidden" id="semesterId">
         <div class="form-group">
-          <label for="semesterYear">年度</label>
+          <label for="semesterYear">Academic Year</label>
           <input type="number" id="semesterYear" required min="2000" max="2100" placeholder="2025" class="year-input">
         </div>
         <div class="form-group">
-          <label for="semesterType">学期</label>
+          <label for="semesterType">Semester</label>
           <select id="semesterType" required>
-            <option value="">選択してください</option>
-            <option value="spring">春学期</option>
-            <option value="summer">夏学期</option>
-            <option value="fall">秋学期</option>
-            <option value="winter">冬学期</option>
+            <option value="">Select</option>
+            <option value="spring">Spring Semester</option>
+            <option value="summer">Summer Semester</option>
+            <option value="fall">Fall Semester</option>
+            <option value="winter">Winter Semester</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="semesterStartDate">開始日</label>
+          <label for="semesterStartDate">Start Date</label>
           <input type="date" id="semesterStartDate" required>
         </div>
         <div class="form-group">
-          <label for="semesterEndDate">終了日</label>
+          <label for="semesterEndDate">End Date</label>
           <input type="date" id="semesterEndDate" required>
         </div>
         <div class="modal-actions">
-          <button type="button" id="cancelSemesterBtn" class="btn">キャンセル</button>
-          <button type="submit" class="btn primary">保存</button>
+          <button type="button" id="cancelSemesterBtn" class="btn">Cancel</button>
+          <button type="submit" class="btn primary">Save</button>
         </div>
       </form>
     </div>
@@ -1108,14 +1108,14 @@ function createSemesterModal() {
     const startDate = document.getElementById('semesterStartDate').value;
     const endDate = document.getElementById('semesterEndDate').value;
     
-    // 学期名を生成
+    // Generate semester name
     const semesterTypeNames = {
-      'spring': '春学期',
-      'summer': '夏学期',
-      'fall': '秋学期',
-      'winter': '冬学期'
+      'spring': 'Spring Semester',
+      'summer': 'Summer Semester',
+      'fall': 'Fall Semester',
+      'winter': 'Winter Semester'
     };
-    const name = `${year}年度 ${semesterTypeNames[semesterType]}`;
+    const name = `${year} ${semesterTypeNames[semesterType]}`;
     
     if (semesterId) {
       // 編集
@@ -1494,16 +1494,11 @@ function resetAllWeekdays() {
 // ============================================
 
 // Firebase接続チェック（v11対応）
+// ※ 同期停止のため、常にローカルモードで動作させる
 function checkFirebase() {
-  try {
-    if (typeof window.firebase !== 'undefined' && window.firebase.db) {
-      isFirebaseEnabled = true;
-      return true;
-    }
-  } catch (e) {
-    console.warn('Firebase が利用できません。ローカルモードで動作します。', e);
-  }
+  // カレンダーマネージャーのクラウド同期を無効化
   isFirebaseEnabled = false;
+  console.info('Firebase sync is disabled. Running in local-only mode.');
   return false;
 }
 
@@ -1561,7 +1556,7 @@ function saveTask(period, day, title, taskData) {
     title: title,
     content: taskData.content,
     dueDate: taskData.dueDate,
-    taskType: taskData.taskType || '課題', // デフォルト値を設定
+    taskType: taskData.taskType || 'Assignment', // default value
     semesterId: semesterId, // 学期IDを追加
     createdAt: Date.now()
   });
@@ -1590,7 +1585,7 @@ function updateTask(taskId, taskData) {
   const updatedTask = {
     ...existingTask,
     ...taskData,
-    taskType: taskData.taskType || existingTask?.taskType || '課題', // デフォルト値を設定
+    taskType: taskData.taskType || existingTask?.taskType || 'Assignment', // default value
     updatedAt: Date.now()
   };
   
@@ -1630,25 +1625,25 @@ function resetModalToAddMode() {
   const taskSection = document.getElementById('taskSection');
   const submitButton = document.getElementById('taskSubmitBtn');
   
-  // 編集モードをリセット
+  // Reset edit mode
   delete modal.dataset.editMode;
   delete modal.dataset.taskId;
   
-  // 進捗管理セクションを表示
+  // Show progress section
   if (progressSection) progressSection.style.display = '';
   if (sectionDivider) sectionDivider.style.display = '';
   if (taskSection) taskSection.style.display = 'block';
   
-  // 送信ボタンのテキストを元に戻す
-  if (submitButton) submitButton.textContent = 'タスク追加';
+  // Reset submit button text
+  if (submitButton) submitButton.textContent = 'Add Task';
   
-  // フォームをリセット
+  // Reset form
   const taskForm = document.getElementById('taskForm');
   if (taskForm) {
     taskForm.reset();
-    // タスクタイプボタンをリセット
+    // Reset task type buttons
     document.querySelectorAll('.task-type-btn').forEach(btn => btn.classList.remove('active'));
-    const defaultBtn = document.querySelector('.task-type-btn[data-type="課題"]');
+    const defaultBtn = document.querySelector('.task-type-btn[data-type="Assignment"]');
     if (defaultBtn) defaultBtn.classList.add('active');
   }
 }
@@ -1682,7 +1677,7 @@ function showEditTaskModalInternal(taskId, task) {
   modal.dataset.taskId = taskId;
 
   // モーダルヘッダーを設定
-  modalTitle.textContent = task.title || 'タスク編集';
+  modalTitle.textContent = task.title || 'Edit Task';
   modalSubtitle.textContent = `${task.period || ''} ${task.day || ''}`;
   
   // 進捗管理セクションを非表示
@@ -1695,9 +1690,9 @@ function showEditTaskModalInternal(taskId, task) {
   const taskSection = document.getElementById('taskSection');
   if (taskSection) taskSection.style.display = 'block';
   
-  // 送信ボタンのテキストを変更
+  // Update submit button text
   const submitButton = document.getElementById('taskSubmitBtn');
-  if (submitButton) submitButton.textContent = 'タスクを更新';
+  if (submitButton) submitButton.textContent = 'Update Task';
   
   // モーダルを表示
   modal.style.display = 'block';
@@ -2011,8 +2006,8 @@ function getClassDays() {
       dayOfWeek: ['日','月','火','水','木','金','土'][new Date(date).getDay()] + '曜日'
     }));
   }
-  // フォールバック: 既存のclassDays.jsから取得
-  return typeof classDays !== 'undefined' ? classDays : [];
+  // 学期データがない場合は空配列を返す
+  return [];
 }
 
 function getClassDaysByWeekday(weekday) {
@@ -2191,19 +2186,15 @@ function generateTimetable(timetableData) {
 }
 
 // 評価情報の読み込みと表示
+// evaluations.json を削除したため、現在は空の一覧だけを表示する
 let evaluationsLoaded = false;
 async function loadEvaluationsIfNeeded() {
   if (evaluationsLoaded) return;
-  try {
-    const res = await fetch('data/evaluations.json', { cache: 'no-cache' });
-    if (!res.ok) return;
-    const data = await res.json();
-    renderEvaluations(data);
-    evaluationsLoaded = true;
-  } catch (_) {}
+  renderEvaluations({ subjects: [] });
+  evaluationsLoaded = true;
 }
 
-function renderEvaluations(data) {
+function renderEvaluations(data = { subjects: [] }) {
   const container = document.getElementById('evaluationsContainer');
   if (!container || !data || !Array.isArray(data.subjects)) return;
   const subjects = data.subjects;
@@ -2538,7 +2529,7 @@ function updateSummaryStats() {
 
 // 週数表示を更新する関数
 function updateWeekDisplay() {
-  const weekdays = ['月曜日','火曜日','水曜日','木曜日','金曜日'];
+  const weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
   let maxWeek = 0;
   
   weekdays.forEach(day => {
@@ -2550,7 +2541,7 @@ function updateWeekDisplay() {
   
   const displayElement = document.getElementById('currentWeekDisplay');
   if (displayElement) {
-    displayElement.textContent = `第${maxWeek}週`;
+    displayElement.textContent = `Week ${maxWeek}`;
   }
 }
 
@@ -2851,10 +2842,10 @@ function createProgressDeficitTaskElement(task) {
   const buttonContainer = document.createElement('div');
   buttonContainer.className = 'progress-buttons';
   
-  // 理解したボタンを追加
+  // Add "Understood" button
   const understandBtn = document.createElement('button');
   understandBtn.className = 'btn progress-understand-btn';
-  understandBtn.textContent = '理解した';
+  understandBtn.textContent = 'Understood';
   understandBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
     triggerButtonRipple(understandBtn, e.clientX, e.clientY);
@@ -2875,10 +2866,10 @@ function createProgressDeficitTaskElement(task) {
     }
   });
   
-  // 戻すボタンを追加
+  // Add "Undo" button
   const ununderstandBtn = document.createElement('button');
   ununderstandBtn.className = 'btn progress-ununderstand-btn';
-  ununderstandBtn.textContent = '戻す';
+  ununderstandBtn.textContent = 'Undo';
   ununderstandBtn.disabled = task.progress === 0;
   ununderstandBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
@@ -3058,12 +3049,12 @@ function createTaskElement(taskId, task) {
     dueDate.classList.add('due-date-week');
   }
 
-  dueDate.textContent = `期限: ${formatDueDate(task.dueDate)}`;
+  dueDate.textContent = `Due: ${formatDueDate(task.dueDate)}`;
 
-  // 編集ボタンを追加
+  // Add edit button
   const editBtn = document.createElement('button');
   editBtn.className = 'task-edit-btn';
-  editBtn.textContent = '編集';
+  editBtn.textContent = 'Edit';
   editBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     // ポップアップがあれば閉じる
@@ -3154,7 +3145,7 @@ function triggerButtonRipple(btn, clientX, clientY) {
   setTimeout(() => span.remove(), 700);
 }
 
-// 期限の表示形式を変更する関数
+// Format due date label
 function formatDueDate(date) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -3164,14 +3155,14 @@ function formatDueDate(date) {
   taskDate.setHours(0, 0, 0, 0);
 
   if (taskDate < today) {
-    return '期限切れ';
+    return 'Overdue';
   } else if (taskDate.getTime() === today.getTime()) {
-    return '今日';
+    return 'Today';
   } else if (taskDate.getTime() === tomorrow.getTime()) {
-    return '明日';
+    return 'Tomorrow';
   } else {
     const diffDays = Math.floor((taskDate - today) / (1000 * 60 * 60 * 24));
-    return `${diffDays}日後`;
+    return `In ${diffDays} days`;
   }
 }
 
@@ -3281,12 +3272,6 @@ function wireEvents() {
       } else {
         document.body.classList.remove('evaluation-mode');
       }
-      if (mode === 'evaluation' && !evaluationsData) {
-        try {
-          const res = await fetch('data/evaluations.json', { cache: 'no-cache' });
-          if (res.ok) evaluationsData = await res.json();
-        } catch (_) {}
-      }
       updateTimetableProgressBars();
     };
     segButtons.forEach(btn => {
@@ -3311,13 +3296,13 @@ function wireEvents() {
     const selectedTaskType = document.querySelector('.task-type-btn.active')?.dataset.type;
 
     // タスクタイプの決定ロジック
-    let taskType = '課題'; // デフォルト値
+  let taskType = 'Assignment'; // default value
     if (selectedTaskType) {
       // ボタンで選択されている場合はそれを使用
       taskType = selectedTaskType;
     } else if (isEditMode && taskId && window.tasks && window.tasks[taskId]) {
-      // 編集モードでボタンが選択されていない場合のみ、既存のタスクタイプを使用
-      taskType = window.tasks[taskId].taskType || '課題';
+      // If in edit mode and no button selected, use existing task type
+      taskType = window.tasks[taskId].taskType || 'Assignment';
     }
     
     // content と taskType を独立して扱う

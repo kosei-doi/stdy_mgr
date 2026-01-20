@@ -1,7 +1,7 @@
-// Firebase設定ファイル
-// 統合アプリでは両方のFirebaseプロジェクトに接続可能
+// Firebase configuration file
+// The integrated app can connect to multiple Firebase projects if needed.
 
-// @tabler用のFirebase設定 - 更新済み: 新しいデータベースを使用
+// Firebase configuration for Tabler - using the new production database.
 const firebaseConfig = {
   apiKey: "AIzaSyDhYTiWflm90SZTySJMDlBpGu7WHzkUaL4",
   authDomain: "manager-8ac68.firebaseapp.com",
@@ -13,7 +13,7 @@ const firebaseConfig = {
   measurementId: "G-XPC0DXSBNZ"
 };
 
-// Firebase初期化
+// Firebase initialization
 if (typeof firebase !== 'undefined') {
   firebase.initializeApp(firebaseConfig);
   console.log('Firebase initialized successfully with new database');
