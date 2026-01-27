@@ -100,6 +100,27 @@ let currentSemesterId = null; // Currently selected semester ID
 // timetable: Timetable data (5x5 2D array, [period][day])
 // createdAt: Creation timestamp
 
+function persistCurrentSemesterId() {
+  try {
+    if (currentSemesterId) {
+      localStorage.setItem('currentSemesterId', currentSemesterId);
+    } else {
+      localStorage.removeItem('currentSemesterId');
+    }
+  } catch (error) {
+    // Ignore storage failures
+  }
+  if (isFirebaseEnabled && window.firebase?.db) {
+    const currentRef = window.firebase.ref(window.firebase.db, 'tabler/currentSemesterId');
+    window.firebase.set(currentRef, currentSemesterId || null).catch(() => {});
+  }
+}
+
+function setCurrentSemesterId(semesterId) {
+  currentSemesterId = semesterId || null;
+  persistCurrentSemesterId();
+}
+
 // Function to load semester data
 function loadSemesters() {
   return new Promise((resolve) => {
@@ -127,15 +148,35 @@ function loadSemesters() {
           } else {
             createDefaultSemester();
           }
-          // Restore selected semester (from localStorage)
-          const savedSemesterId = localStorage.getItem('currentSemesterId');
-          if (savedSemesterId && semestersData.find(s => s.id === savedSemesterId)) {
-            currentSemesterId = savedSemesterId;
-          } else if (semestersData.length > 0) {
-            currentSemesterId = semestersData[0].id;
-            localStorage.setItem('currentSemesterId', currentSemesterId);
-          }
-          resolve(semestersData);
+          const currentRef = window.firebase.ref(window.firebase.db, 'tabler/currentSemesterId');
+          return window.firebase.get(currentRef).then((currentSnapshot) => {
+            const firebaseSemesterId = currentSnapshot.val();
+            if (firebaseSemesterId && semestersData.find(s => s.id === firebaseSemesterId)) {
+              currentSemesterId = firebaseSemesterId;
+            } else {
+              const savedSemesterId = localStorage.getItem('currentSemesterId');
+              if (savedSemesterId && semestersData.find(s => s.id === savedSemesterId)) {
+                currentSemesterId = savedSemesterId;
+              } else if (semestersData.length > 0) {
+                currentSemesterId = semestersData[0].id;
+              } else {
+                currentSemesterId = null;
+              }
+            }
+            persistCurrentSemesterId();
+            resolve(semestersData);
+          }).catch(() => {
+            const savedSemesterId = localStorage.getItem('currentSemesterId');
+            if (savedSemesterId && semestersData.find(s => s.id === savedSemesterId)) {
+              currentSemesterId = savedSemesterId;
+            } else if (semestersData.length > 0) {
+              currentSemesterId = semestersData[0].id;
+            } else {
+              currentSemesterId = null;
+            }
+            persistCurrentSemesterId();
+            resolve(semestersData);
+          });
         })
         .catch((error) => {
           console.error('Failed to load semester data from Firebase:', error);
@@ -168,14 +209,15 @@ function loadSemestersFromLocalStorage() {
     } else {
       createDefaultSemester();
     }
-    // Restore selected semester
     const savedSemesterId = localStorage.getItem('currentSemesterId');
     if (savedSemesterId && semestersData.find(s => s.id === savedSemesterId)) {
       currentSemesterId = savedSemesterId;
     } else if (semestersData.length > 0) {
       currentSemesterId = semestersData[0].id;
-      localStorage.setItem('currentSemesterId', currentSemesterId);
+    } else {
+      currentSemesterId = null;
     }
+    persistCurrentSemesterId();
   } catch (error) {
     console.error('Failed to load semester data from localStorage:', error);
     createDefaultSemester();
@@ -230,7 +272,7 @@ function createDefaultSemester() {
   semestersData = [defaultSemester];
   currentSemesterId = defaultSemester.id;
   saveSemesters();
-  localStorage.setItem('currentSemesterId', currentSemesterId);
+  persistCurrentSemesterId();
 }
 
 // Function to generate date string in local time (YYYY-MM-DD format)
@@ -320,17 +362,18 @@ function updateSemester(semesterId, updates) {
   const index = semestersData.findIndex(s => s.id === semesterId);
   if (index !== -1) {
     const semester = semestersData[index];
-    // Regenerate class days if start/end dates are changed
+    // Preserve existing class day/holiday selections within overlap
     if (updates.startDate || updates.endDate) {
       const startDate = updates.startDate || semester.startDate;
       const endDate = updates.endDate || semester.endDate;
-      // Add new date range while keeping existing class days
-      const newClassDays = generateDefaultClassDays(startDate, endDate);
-      // Merge with existing class days (remove duplicates)
       const existingDays = semester.classDays || [];
-      const mergedDays = [...new Set([...existingDays, ...newClassDays])]
-        .filter(date => date >= startDate && date <= endDate)
-        .sort();
+      const oldStart = semester.startDate;
+      const oldEnd = semester.endDate;
+      // Keep prior selections within new range, only add defaults for new dates
+      const preservedDays = existingDays.filter(date => date >= startDate && date <= endDate);
+      const newDefaultDays = generateDefaultClassDays(startDate, endDate)
+        .filter(date => date < oldStart || date > oldEnd);
+      const mergedDays = [...new Set([...preservedDays, ...newDefaultDays])].sort();
       updates.classDays = mergedDays;
     }
     semestersData[index] = { ...semester, ...updates };
@@ -350,10 +393,10 @@ function deleteSemester(semesterId) {
     if (currentSemesterId === semesterId) {
       if (semestersData.length > 0) {
         currentSemesterId = semestersData[0].id;
-        localStorage.setItem('currentSemesterId', currentSemesterId);
+        persistCurrentSemesterId();
       } else {
         currentSemesterId = null;
-        localStorage.removeItem('currentSemesterId');
+        persistCurrentSemesterId();
         // Create default semester if no semesters remain
         createDefaultSemester();
       }
@@ -438,8 +481,7 @@ function renderSemestersList() {
     // Select button
     const selectBtn = semesterCard.querySelector('.btn-select');
     selectBtn.addEventListener('click', () => {
-      currentSemesterId = semester.id;
-      localStorage.setItem('currentSemesterId', currentSemesterId);
+      setCurrentSemesterId(semester.id);
       renderSemesterSelector();
       
       // Reload tasks and progress when switching semesters
@@ -454,8 +496,7 @@ function renderSemestersList() {
     // Class days management button
     const classDaysBtn = semesterCard.querySelector('.btn-classdays');
     classDaysBtn.addEventListener('click', () => {
-      currentSemesterId = semester.id;
-      localStorage.setItem('currentSemesterId', currentSemesterId);
+      setCurrentSemesterId(semester.id);
       renderSemesterSelector();
       showClassDaysManagement();
     });
@@ -463,8 +504,7 @@ function renderSemestersList() {
     // Timetable management button
     const timetableBtn = semesterCard.querySelector('.btn-timetable');
     timetableBtn.addEventListener('click', () => {
-      currentSemesterId = semester.id;
-      localStorage.setItem('currentSemesterId', currentSemesterId);
+      setCurrentSemesterId(semester.id);
       renderSemesterSelector();
       showTimetableManagement();
     });
