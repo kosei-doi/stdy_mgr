@@ -513,16 +513,83 @@ body {
   border-radius: 12px 12px 0 0;
   margin: -20px -20px 20px -20px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header-title-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  position: relative;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .modal-header h2 {
+  flex: 1;
+  min-width: 0;
   color: white;
   margin: 0;
   font-size: 1.2em;
+}
+
+.modal-evaluation-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.modal-evaluation {
+  font-size: 0.75em;
+  color: #C5CAE9;
+  opacity: 0.95;
+}
+
+.modal-evaluation.empty {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.modal-evaluation-input {
+  font-size: 0.75em;
+  color: #1A237E;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  padding: 4px 8px;
+  min-width: 180px;
+}
+
+.modal-evaluation-input:focus {
+  outline: none;
+  border-color: #7986CB;
+  box-shadow: 0 0 0 2px rgba(121, 134, 203, 0.3);
+}
+
+.modal-evaluation-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #C5CAE9;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.modal-evaluation-edit-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.modal-evaluation-edit-btn.edit-mode {
+  background: rgba(76, 175, 80, 0.3);
+  color: #A5D6A7;
+  border-color: #4CAF50;
 }
 
 .modal-header p {

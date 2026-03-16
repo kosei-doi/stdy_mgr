@@ -1,88 +1,52 @@
 // Integrated app: @tabler task management + @platform progress management
+// Data model: Subject ID as Single Source of Truth
 
-// Subject master definition (integrated from @tabler and @platform)
-const subjectsMaster = [
-  // Period 1
-  { id: 'mon-1', name: '', dayOfWeek: '月曜日', slot: 1, dataId: 'mon-1' },
-  { id: 'tue-1', name: '', dayOfWeek: '火曜日', slot: 1, dataId: 'tue-1' },
-  { id: 'wed-1', name: '', dayOfWeek: '水曜日', slot: 1, dataId: 'wed-1' },
-  { id: 'thu-1', name: 'CS', dayOfWeek: '木曜日', slot: 1, dataId: 'CS' },
-  { id: 'fri-1', name: '微分積分', dayOfWeek: '金曜日', slot: 1, dataId: '微分積分' },
-  
-  // Period 2
-  { id: 'mon-2', name: 'Cプロ', dayOfWeek: '月曜日', slot: 2, dataId: 'Cプロ' },
-  { id: 'tue-2', name: '実験', dayOfWeek: '火曜日', slot: 2, dataId: '実験' },
-  { id: 'wed-2', name: '線形代数', dayOfWeek: '水曜日', slot: 2, dataId: '線形代数' },
-  { id: 'thu-2', name: '', dayOfWeek: '木曜日', slot: 2, dataId: 'thu-2' },
-  { id: 'fri-2', name: 'ALC', dayOfWeek: '金曜日', slot: 2, dataId: 'ALC' },
-  
-  // Period 3
-  { id: 'mon-3', name: '中国語IA', dayOfWeek: '月曜日', slot: 3, dataId: '中国語IA' },
-  { id: 'tue-3', name: '実験', dayOfWeek: '火曜日', slot: 3, dataId: '実験' },
-  { id: 'wed-3', name: '', dayOfWeek: '水曜日', slot: 3, dataId: 'wed-3' },
-  { id: 'thu-3', name: '憲法IB', dayOfWeek: '木曜日', slot: 3, dataId: '憲法IB' },
-  { id: 'fri-3', name: '電磁気学A', dayOfWeek: '金曜日', slot: 3, dataId: '電磁気学A' },
-  
-  // Period 4
-  { id: 'mon-4', name: '生命科学A', dayOfWeek: '月曜日', slot: 4, dataId: '生命科学A' },
-  { id: 'tue-4', name: '実験', dayOfWeek: '火曜日', slot: 4, dataId: '実験' },
-  { id: 'wed-4', name: '', dayOfWeek: '水曜日', slot: 4, dataId: 'wed-4' },
-  { id: 'thu-4', name: '中国語IB', dayOfWeek: '木曜日', slot: 4, dataId: '中国語IB' },
-  { id: 'fri-4', name: '電磁気学A', dayOfWeek: '金曜日', slot: 4, dataId: '電磁気学A' },
-  
-  // Period 5
-  { id: 'mon-5', name: '', dayOfWeek: '月曜日', slot: 5, dataId: 'mon-5' },
-  { id: 'tue-5', name: '実験', dayOfWeek: '火曜日', slot: 5, dataId: '実験' },
-  { id: 'wed-5', name: '力学A', dayOfWeek: '水曜日', slot: 5, dataId: '力学A' },
-  { id: 'thu-5', name: '電生', dayOfWeek: '木曜日', slot: 5, dataId: '電生' },
-  { id: 'fri-5', name: '', dayOfWeek: '金曜日', slot: 5, dataId: 'fri-5' }
-];
+/**
+ * @typedef {Object} Semester
+ * @property {string} id - 学期ID (例: "sem_173...")
+ * @property {string} name - 学期名
+ * @property {string} startDate - 開始日 (YYYY-MM-DD)
+ * @property {string} endDate - 終了日 (YYYY-MM-DD)
+ * @property {string[]} classDays - 授業日の配列
+ * @property {string[][]} timetable - 5x5の2次元配列。中身は Subject の ID（空きコマは "" または null）
+ * @property {number} createdAt - 作成タイムスタンプ
+ */
 
+/**
+ * @typedef {Object} Subject
+ * @property {string} id - 科目ID (例: "sub_173...")
+ * @property {string} semesterId - 所属する学期のID
+ * @property {string} name - 科目名
+ * @property {string} color - 背景色 (例: "#FF5733")
+ * @property {number} progress - 進捗 (0-100)
+ * @property {Object|null} [evaluation] - 外部評価データ(シラバス等)のオブジェクトを直接保持
+ */
 
+/**
+ * @typedef {Object} Task
+ * @property {string} id - タスクID
+ * @property {string} semesterId - 所属する学期のID
+ * @property {string} subjectId - 紐づく科目のID
+ * @property {"Assignment"|"Report"|"Test"} type - タスクの種類
+ * @property {string} content - タスクの詳細
+ * @property {string} dueDate - 期限 (YYYY-MM-DD)
+ * @property {boolean} completed - 完了状態
+ */
 
-// Define background colors for each subject (slightly darker colors for better visibility)
-const subjectColors = {
-  'CS': '#FEF0F0', // Computer Science - slightly darker pink
-  '微分積分': '#F0FEF0', // Mathematics - slightly darker green
-  'Cプロ': '#F0F8FF', // Programming - slightly darker blue
-  '実験': '#FFFEF0', // Experiment - slightly darker yellow
-  '線形代数': '#FFF0E6', // Mathematics - slightly darker orange
-  '中国語IA': '#F8F0FF', // Language - slightly darker purple
-  '中国語IB': '#FEF0F8', // Language - slightly darker magenta
-  '憲法IB': '#F0FEF8', // Law - slightly darker teal
-  '電磁気学A': '#FEF0F0', // Physics - slightly darker red
-  '電生': '#F0FEF0', // Electrical/Biology - slightly darker lime
-  '生命科学A': '#F0F8FF', // Biology - slightly darker sky blue
-  '力学A': '#FFF8F0', // Physics - slightly darker gold
-  'ALC': '#F8F0FF', // Language - slightly darker violet
-  '化学': '#F0FEF8', // Chemistry - slightly darker aqua
-  '科学と芸術': '#FEF0FF', // Science and Arts - slightly darker fuchsia
-  '身体論': '#F0F0FF', // Body Theory - slightly darker indigo
-  '電基礎': '#FEF0F0', // Electrical Basics - slightly darker rose
-  '生命科学': '#F8FEF0'  // Life Science - slightly darker lime green
-};
-
-// Function to assign color to subject (using fixed colors from @tabler)
-function assignColorToSubject(subjectName) {
-  return subjectColors[subjectName] || '#F5F5F5'; // Default color
-}
-
-
-// Initial timetable data (correctly inherited from @tabler)
-const initialTimetableData = [
-  ['', '', '', 'CS', '微分積分'],     // Period 1
-  ['Cプロ', '実験', '線形代数', '', 'ALC'],  // Period 2
-  ['中国語IA', '実験', '', '憲法IB', '電磁気学A'],  // Period 3
-  ['生命科学A', '実験', '', '中国語IB', '電磁気学A'],  // Period 4
-  ['', '実験', '力学A', '電生', '']   // Period 5
+// 新規 Subject 作成時の色割り当て用パレット（薄いパステル、目に優しい）
+const SUBJECT_COLOR_PALETTE = [
+  '#FDEAEA', '#FDF4E3', '#F2F8E1', '#E4F9F5', '#E3F2FD',
+  '#F3E5F5', '#FFF0F5', '#FFF8E1', '#E8F5E9', '#E0F7FA',
+  '#EDE7F6', '#FCE4EC', '#FBE9E7', '#F1F8E9', '#E1F5FE'
 ];
 
 // Global variables
-let subjectsData = null;
+/** @type {{[subjectId: string]: Subject}} */
+let subjectsById = {};
 let isFirebaseEnabled = false;
-let displayMode = 'progress'; // 'progress' | 'evaluation'
 let evaluationsData = null;
-let modalState = { name: null, slot: null, dataId: null };
+/** @type {{ subjectId: string|null, period: string, day: string }} */
+let modalState = { subjectId: null, period: '', day: '' };
 
 // ============================================
 // Step1: Semester Management Feature
@@ -91,14 +55,16 @@ let modalState = { name: null, slot: null, dataId: null };
 let semestersData = []; // Array of semester data
 let currentSemesterId = null; // Currently selected semester ID
 
-// Semester data structure: { id, name, startDate, endDate, classDays, timetable, createdAt }
-// id: Unique ID (timestamp-based)
-// name: Semester name (e.g., "2025年度 秋学期")
-// startDate: Start date (YYYY-MM-DD format)
-// endDate: End date (YYYY-MM-DD format)
-// classDays: Array of class days (array of strings in YYYY-MM-DD format)
-// timetable: Timetable data (5x5 2D array, [period][day])
-// createdAt: Creation timestamp
+// Empty timetable template (5 periods x 5 weekdays, subject IDs only)
+function createEmptyTimetable() {
+  return [
+    ['', '', '', '', ''],
+    ['', '', '', '', ''],
+    ['', '', '', '', ''],
+    ['', '', '', '', ''],
+    ['', '', '', '', '']
+  ];
+}
 
 function persistCurrentSemesterId() {
   try {
@@ -138,7 +104,7 @@ function loadSemesters() {
                 semester.classDays = generateDefaultClassDays(semester.startDate, semester.endDate);
               }
               if (!semester.timetable) {
-                semester.timetable = JSON.parse(JSON.stringify(initialTimetableData));
+                semester.timetable = createEmptyTimetable();
               }
             });
             // Create default semester if none exists
@@ -203,7 +169,7 @@ function loadSemestersFromLocalStorage() {
           semester.classDays = generateDefaultClassDays(semester.startDate, semester.endDate);
         }
         if (!semester.timetable) {
-          semester.timetable = JSON.parse(JSON.stringify(initialTimetableData));
+          semester.timetable = createEmptyTimetable();
         }
       });
     } else {
@@ -260,7 +226,7 @@ function createDefaultSemester() {
   ];
   
   const defaultSemester = {
-    id: `semester_${Date.now()}`,
+    id: `sem_${Date.now()}`,
     name: semesterName,
     startDate: startDate,
     endDate: endDate,
@@ -344,7 +310,7 @@ function addSemester(name, startDate, endDate) {
   ];
   
   const newSemester = {
-    id: `semester_${Date.now()}`,
+    id: `sem_${Date.now()}`,
     name: name,
     startDate: startDate,
     endDate: endDate,
@@ -787,7 +753,7 @@ function renderClassDaysStats(semester) {
 }
 
 // Function to display timetable management screen (modal)
-function showTimetableManagement() {
+async function showTimetableManagement() {
   const modal = document.getElementById('timetableModal');
   if (!modal) return;
   
@@ -796,9 +762,9 @@ function showTimetableManagement() {
     alert('Please select a semester');
     return;
   }
+  await loadSubjects(); // Ensure subjects are loaded for getSubjectById in editor
   
-  // Create copy of timetable data (for editing)
-  const timetableCopy = JSON.parse(JSON.stringify(currentSemester.timetable || JSON.parse(JSON.stringify(initialTimetableData))));
+  const timetableCopy = JSON.parse(JSON.stringify(currentSemester.timetable || createEmptyTimetable()));
   modal.dataset.timetableData = JSON.stringify(timetableCopy);
   
   renderTimetableEditor();
@@ -856,26 +822,57 @@ function saveTimetableChanges() {
   const currentSemester = getCurrentSemester();
   if (!currentSemester) return;
   
-  // Get timetable data from input fields
   const inputs = editor.querySelectorAll('.timetable-input');
-  const timetable = JSON.parse(JSON.stringify(initialTimetableData));
+  const timetable = createEmptyTimetable();
+  const usedSubjectIds = new Set();
   
   inputs.forEach(input => {
     const periodIndex = parseInt(input.dataset.periodIndex);
     const dayIndex = parseInt(input.dataset.dayIndex);
-    if (!isNaN(periodIndex) && !isNaN(dayIndex)) {
-      timetable[periodIndex][dayIndex] = input.value.trim();
+    if (isNaN(periodIndex) || isNaN(dayIndex)) return;
+    const name = input.value.trim();
+    if (name) {
+      const sub = getOrCreateSubjectByName(currentSemester.id, name);
+      if (sub) {
+        timetable[periodIndex][dayIndex] = sub.id;
+        usedSubjectIds.add(sub.id);
+      }
     }
   });
   
-  // Update semester timetable
+  // 時間割から外れた科目を subjectsById から削除し、その科目に紐づくタスクも削除
+  const deletedSubjectIds = [];
+  Object.keys(subjectsById).forEach(id => {
+    const s = subjectsById[id];
+    if (s.semesterId === currentSemester.id && !usedSubjectIds.has(id)) {
+      deletedSubjectIds.push(id);
+      delete subjectsById[id];
+    }
+  });
+
+  // 削除した科目に紐づくタスクを window.tasks と Firebase から削除
+  if (deletedSubjectIds.length > 0 && window.tasks) {
+    const idsToDelete = new Set(deletedSubjectIds);
+    const taskIdsToRemove = Object.entries(window.tasks)
+      .filter(([, task]) => task.subjectId && idsToDelete.has(task.subjectId))
+      .map(([taskId]) => taskId);
+    taskIdsToRemove.forEach(taskId => {
+      delete window.tasks[taskId];
+      if (isFirebaseEnabled && window.firebase?.db) {
+        const taskRef = window.firebase.ref(window.firebase.db, `tabler/tasks/${taskId}`);
+        window.firebase.remove(taskRef).catch((err) => console.error('Failed to delete task:', err));
+      }
+    });
+    displayTasks(window.tasks);
+    updateTaskNumbers(window.tasks);
+    updateIncompleteTasksCount(window.tasks);
+  }
+  
   currentSemester.timetable = timetable;
+  saveSubjects();
   saveSemesters();
   
-  // Reload timetable (update display)
   loadTimetable();
-  
-  // Close modal
   modal.style.display = 'none';
 }
 
@@ -896,7 +893,7 @@ function renderTimetableEditor() {
   if (modal && modal.dataset.timetableData) {
     timetable = JSON.parse(modal.dataset.timetableData);
   } else {
-    timetable = currentSemester.timetable || JSON.parse(JSON.stringify(initialTimetableData));
+    timetable = currentSemester.timetable || createEmptyTimetable();
   }
   const days = ['月', '火', '水', '木', '金'];
   const periods = ['1限', '2限', '3限', '4限', '5限'];
@@ -933,16 +930,18 @@ function renderTimetableEditor() {
       const cell = document.createElement('div');
       cell.className = 'timetable-editor-cell editable';
       
+      const subjectId = timetable[periodIndex][dayIndex];
+      const subject = subjectId ? getSubjectById(subjectId) : null;
       const input = document.createElement('input');
       input.type = 'text';
-      input.value = timetable[periodIndex][dayIndex] || '';
+      input.value = subject ? subject.name : '';
       input.placeholder = '科目名';
       input.className = 'timetable-input';
       input.dataset.periodIndex = periodIndex;
       input.dataset.dayIndex = dayIndex;
       // Save to temporary data on change event (confirmed on save button)
       input.addEventListener('input', () => {
-        timetable[periodIndex][dayIndex] = input.value.trim();
+        timetable[periodIndex][dayIndex] = input.value.trim(); // store name temporarily for modal state
       });
       
       cell.appendChild(input);
@@ -1547,62 +1546,36 @@ function checkFirebase() {
   return false;
 }
 
-// Function to initialize timetable data (v11 compatible)
-function initializeTimetable() {
-  if (!isFirebaseEnabled) return;
-  
-  const timetableRef = window.firebase.ref(window.firebase.db, "tabler/timetable");
-  window.firebase.get(timetableRef).then((snapshot) => {
-    if (!snapshot.exists()) {
-      window.firebase.set(timetableRef, initialTimetableData);
-    }
-  });
-}
-
-// Function to load timetable data (v11 compatible)
+// Function to load timetable (semester-based, Single Source of Truth)
 function loadTimetable() {
-  // Step2: Load timetable for selected semester
   const currentSemester = getCurrentSemester();
-  if (currentSemester && currentSemester.timetable) {
-    generateTimetable(currentSemester.timetable);
+  if (!currentSemester) {
+    generateTimetable(createEmptyTimetable());
     return;
   }
-  
-  // Fallback: Load from Firebase (existing behavior)
-  if (!isFirebaseEnabled) {
-    // Use default if cannot load from localStorage either
-    generateTimetable(initialTimetableData);
-    return;
+  let t = currentSemester.timetable;
+  if (!t || !Array.isArray(t) || t.length !== 5 || !Array.isArray(t[0])) {
+    t = createEmptyTimetable();
+    currentSemester.timetable = t;
+    saveSemesters();
   }
-  
-  const timetableRef = window.firebase.ref(window.firebase.db, "tabler/timetable");
-  window.firebase.onValue(timetableRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      generateTimetable(data);
-    } else {
-      generateTimetable(initialTimetableData);
-    }
-  });
+  generateTimetable(t);
 }
 
-// Function to save task (v11 compatible)
-function saveTask(period, day, title, taskData) {
+// Function to save task (v11 compatible, subjectId based)
+function saveTask(subjectId, taskData) {
   if (!isFirebaseEnabled) return;
-  
-  // Get current semester ID
   const semesterId = currentSemesterId || null;
   
   const tasksRef = window.firebase.ref(window.firebase.db, "tabler/tasks");
   const newTaskRef = window.firebase.push(tasksRef);
   window.firebase.set(newTaskRef, {
-    period: period,
-    day: day,
-    title: title,
+    semesterId,
+    subjectId,
+    type: taskData.taskType || taskData.type || 'Assignment',
     content: taskData.content,
     dueDate: taskData.dueDate,
-    taskType: taskData.taskType || 'Assignment', // default value
-    semesterId: semesterId, // Add semester ID
+    completed: false,
     createdAt: Date.now()
   });
 }
@@ -1627,10 +1600,12 @@ function updateTask(taskId, taskData) {
   const taskRef = window.firebase.ref(window.firebase.db, `tabler/tasks/${taskId}`);
   const existingTask = window.tasks && window.tasks[taskId] ? window.tasks[taskId] : {};
   
+  const typeVal = taskData.taskType || taskData.type || existingTask?.type || existingTask?.taskType || 'Assignment';
   const updatedTask = {
     ...existingTask,
     ...taskData,
-    taskType: taskData.taskType || existingTask?.taskType || 'Assignment', // default value
+    type: typeVal,
+    taskType: typeVal, // legacy compat
     updatedAt: Date.now()
   };
   
@@ -1691,6 +1666,9 @@ function resetModalToAddMode() {
     const defaultBtn = document.querySelector('.task-type-btn[data-type="Assignment"]');
     if (defaultBtn) defaultBtn.classList.add('active');
   }
+
+  // 評価編集モードを解除
+  setEvaluationEditMode(false);
 }
 
 // Function to display task edit modal (uses same logic as showTaskModal)
@@ -1717,69 +1695,44 @@ function showEditTaskModalInternal(taskId, task) {
   const modalTitle = document.getElementById('modalTitle');
   const modalSubtitle = document.getElementById('modalSubtitle');
 
-  // Set to edit mode
   modal.dataset.editMode = 'true';
   modal.dataset.taskId = taskId;
 
-  // Set modal header
-  modalTitle.textContent = task.title || 'Edit Task';
-  modalSubtitle.textContent = `${task.period || ''} ${task.day || ''}`;
+  const subject = getSubjectById(task.subjectId);
+  const subjectName = subject ? subject.name : (task.title || 'Edit Task');
+  modalTitle.textContent = subjectName;
+  const slot = getSubjectSlotFromTimetable(task.subjectId);
+  modalSubtitle.textContent = slot ? `${slot.period} ${slot.day}` : 'Edit';
+  const modalEvaluation = document.getElementById('modalEvaluation');
+  if (modalEvaluation) {
+    const text = subject ? formatEvaluationForModal(getEvaluationBySubject(subject)) : '';
+    modalEvaluation.textContent = text || '（未設定）';
+    modalEvaluation.classList.toggle('empty', !text);
+  }
   
-  // Hide progress management section
   const progressSection = document.querySelector('.progress-section');
   const sectionDivider = document.querySelector('.section-divider');
   if (progressSection) progressSection.style.display = 'none';
   if (sectionDivider) sectionDivider.style.display = 'none';
   
-  // Display task section
   const taskSection = document.getElementById('taskSection');
   if (taskSection) taskSection.style.display = 'block';
   
-  // Update submit button text
   const submitButton = document.getElementById('taskSubmitBtn');
   if (submitButton) submitButton.textContent = 'Update Task';
   
-  // Display modal
   modal.style.display = 'block';
-
-  // Search for corresponding dataId (same logic as showTaskModal)
-  const slotNum = getSlotNumber(task.period);
-  const dayOfWeek = getDayOfWeek(task.day);
-  let cellSubject = subjectsMaster.find(s => 
-    s.name === task.title && 
-    s.dayOfWeek === dayOfWeek && 
-    s.slot === slotNum
-  );
+  modalState = { subjectId: task.subjectId, period: slot?.period || '', day: slot?.day || '' };
   
-  // Create dynamically if not found in subjectsMaster
-  if (!cellSubject) {
-    // More secure dataId generation (Japanese compatible)
-    const dataId = `${task.title.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '-')}`;
-    cellSubject = {
-      id: dataId,
-      name: task.title,
-      dayOfWeek: dayOfWeek,
-      slot: slotNum,
-      dataId: dataId
-    };
-  }
-  
-  modalState = { name: task.title, slot: slotNum, dataId: cellSubject?.dataId };
-  
-  // Set date after modal is displayed
   setTimeout(() => {
-    // Set existing date
     const taskDateInput = document.getElementById('taskDate');
     if (taskDateInput && task.dueDate) {
       taskDateInput.value = task.dueDate;
     }
   }, 100);
   
-  // Update progress management progress (delay slightly to wait for data loading)
   setTimeout(() => {
-    if (cellSubject) {
-      updateModalProgress(cellSubject.dataId);
-    }
+    if (task.subjectId) updateModalProgress(task.subjectId);
   }, 200);
   
   // Set existing values in form
@@ -1788,18 +1741,14 @@ function showEditTaskModalInternal(taskId, task) {
   if (taskContentInput) taskContentInput.value = task.content || '';
   if (taskDateInput && task.dueDate) taskDateInput.value = task.dueDate;
 
-  // Set task type buttons
+  const taskType = task.type || task.taskType;
   document.querySelectorAll('.task-type-btn').forEach(btn => {
     btn.classList.remove('active');
-    if (btn.dataset.type === task.taskType) {
-      btn.classList.add('active');
-    }
+    if (btn.dataset.type === taskType) btn.classList.add('active');
   });
-  
-  // Select "課題" by default
-  if (!task.taskType) {
+  if (!taskType) {
     document.querySelector('.task-type-btn.active')?.classList.remove('active');
-    document.querySelector('.task-type-btn[data-type="課題"]').classList.add('active');
+    document.querySelector('.task-type-btn[data-type="Assignment"]')?.classList.add('active');
   }
 }
 
@@ -1877,167 +1826,155 @@ function loadTasks() {
   });
 }
 
-// Function to load progress data
+/** @returns {Subject|null} */
+function getSubjectById(subjectId) {
+  if (!subjectId) return null;
+  return subjectsById[subjectId] || null;
+}
+
+/** @returns {Subject[]} */
+function getSubjectsForSemester(semesterId) {
+  return Object.values(subjectsById).filter(s => s.semesterId === semesterId);
+}
+
+/**
+ * Create a new Subject and add to store.
+ * 色はパレットから「currentSubjects で未使用の色」を優先して割り当て。全て使用済みなら先頭からループ。
+ * 既存科目の再利用時は getOrCreateSubjectByName が既存を返すため色は維持される。
+ *
+ * @param {string} semesterId
+ * @param {string} name
+ * @param {string} [color] - Optional; 指定時はそれを使用
+ * @returns {Subject}
+ */
+function createSubject(semesterId, name, color) {
+  const id = `sub_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  const currentSubjects = Object.values(subjectsById).filter(s => s.semesterId === semesterId);
+  const usedColors = new Set(currentSubjects.map(s => s.color));
+  let assignedColor = color;
+  if (!assignedColor) {
+    const unused = SUBJECT_COLOR_PALETTE.find(c => !usedColors.has(c));
+    assignedColor = unused != null ? unused : SUBJECT_COLOR_PALETTE[currentSubjects.length % SUBJECT_COLOR_PALETTE.length];
+  }
+  const subject = {
+    id,
+    semesterId,
+    name: (name || '').trim(),
+    color: assignedColor,
+    progress: 0,
+    evaluation: null
+  };
+  subjectsById[id] = subject;
+  return subject;
+}
+
+/**
+ * Get or create Subject by name for a semester (used when editing timetable).
+ * 同じ学期内に同じ名前（name）の科目が既に存在する場合は、新規 ID を発行せず
+ * 既存の Subject の id を再利用する。週2回の授業や連続コマを1つの Subject で共有できる。
+ *
+ * @param {string} semesterId
+ * @param {string} name
+ * @returns {Subject|null}
+ */
+function getOrCreateSubjectByName(semesterId, name) {
+  const trimmed = (name || '').trim();
+  if (!trimmed) return null;
+  const currentSubjects = Object.values(subjectsById).filter(s => s.semesterId === semesterId);
+  const existing = currentSubjects.find(s => s.name === trimmed);
+  if (existing) return existing;
+  return createSubject(semesterId, trimmed);
+}
+
+// Function to load subjects data
 function loadSubjects() {
   return new Promise((resolve) => {
     if (!currentSemesterId) {
-      // Return empty data if no semester is selected
-      subjectsData = [];
-      resolve(subjectsData);
+      subjectsById = {};
+      resolve(subjectsById);
       return;
     }
     
     if (isFirebaseEnabled) {
-      // Load progress data for each semester
       const subjectsRef = window.firebase.ref(window.firebase.db, `subjects/${currentSemesterId}`);
       window.firebase.get(subjectsRef)
         .then((snapshot) => {
           const data = snapshot.val();
-          if (data) {
-            // Use subject name if dataId field is missing from Firebase-loaded data
-            subjectsData = Object.values(data).map(subject => ({
-              // Discard totalTime
-              id: subject.id || subject.dataId || subject.name,
-              name: subject.name,
-              dataId: subject.dataId || subject.name || subject.id,
-              progress: subject.progress || 0,
-              semesterId: currentSemesterId,
-              lastUpdated: subject.lastUpdated || null
-            }));
-          } else {
-            // Get subjects from current timetable if data doesn't exist
-            const currentSemester = getCurrentSemester();
-            if (currentSemester && currentSemester.timetable) {
-              subjectsData = getUniqueSubjects().map(s => ({ 
-                id: s.id, 
-                name: s.name, 
-                dataId: s.dataId,
-                progress: 0,
+          subjectsById = {};
+          if (data && typeof data === 'object') {
+            Object.entries(data).forEach(([id, sub]) => {
+              subjectsById[id] = {
+                id,
                 semesterId: currentSemesterId,
-                lastUpdated: null 
-              }));
-              saveSubjects(subjectsData);
-            } else {
-              subjectsData = [];
-            }
+                name: sub.name || '',
+                color: sub.color || '#F5F5F5',
+                progress: sub.progress ?? 0,
+                evaluation: sub.evaluation != null ? sub.evaluation : null
+              };
+            });
           }
-          resolve(subjectsData);
+          resolve(subjectsById);
         })
         .catch((error) => {
-          console.error('Failed to load data from Firebase:', error);
-          subjectsData = getUniqueSubjects().map(s => ({ 
-            id: s.id, 
-            name: s.name, 
-            dataId: s.dataId,
-            progress: 0,
-            semesterId: currentSemesterId,
-            lastUpdated: null 
-          }));
-          resolve(subjectsData);
+          console.error('Failed to load subjects from Firebase:', error);
+          subjectsById = {};
+          resolve(subjectsById);
         });
     } else {
-      // Also manage by semester for localStorage
-      const currentSemester = getCurrentSemester();
-      if (currentSemester && currentSemester.timetable) {
-        subjectsData = getUniqueSubjects().map(s => ({ 
-          id: s.id, 
-          name: s.name, 
-          dataId: s.dataId,
-          progress: 0,
-          semesterId: currentSemesterId,
-          totalTime: 0, 
-          lastUpdated: null 
-        }));
-      } else {
-        subjectsData = [];
+      try {
+        const key = `subjects_${currentSemesterId}`;
+        const stored = localStorage.getItem(key);
+        subjectsById = stored ? JSON.parse(stored) : {};
+        if (typeof subjectsById !== 'object') subjectsById = {};
+      } catch (e) {
+        subjectsById = {};
       }
-      resolve(subjectsData);
+      resolve(subjectsById);
     }
   });
 }
 
-// Function to save progress data
-function saveSubjects(subjects) {
-  subjectsData = subjects;
-  
+// Function to save subjects data
+function saveSubjects() {
   if (!currentSemesterId) {
-    console.warn('Cannot save progress data because no semester is selected');
+    console.warn('Cannot save subjects because no semester is selected');
     return;
   }
   
   if (isFirebaseEnabled) {
-    // Save progress data for each semester
     const subjectsRef = window.firebase.ref(window.firebase.db, `subjects/${currentSemesterId}`);
-    window.firebase.set(subjectsRef, subjectsData)
-      .then(() => {
-      })
-      .catch((error) => {
-        console.error('Failed to save data to Firebase:', error);
-      });
+    const toSave = Object.fromEntries(
+      Object.entries(subjectsById).filter(([, s]) => s.semesterId === currentSemesterId)
+    );
+    window.firebase.set(subjectsRef, toSave).catch((error) => {
+      console.error('Failed to save subjects to Firebase:', error);
+    });
   } else {
-    // Also save by semester for localStorage
     const key = `subjects_${currentSemesterId}`;
-    localStorage.setItem(key, JSON.stringify(subjectsData));
+    const toSave = Object.fromEntries(
+      Object.entries(subjectsById).filter(([, s]) => s.semesterId === currentSemesterId)
+    );
+    localStorage.setItem(key, JSON.stringify(toSave));
   }
 }
-
-// Function to get unique subject list (Firebase database based)
-function getUniqueSubjects() {
-  // Get subjects from current semester's timetable
-  const currentSemester = getCurrentSemester();
-  if (!currentSemester || !currentSemester.timetable) {
-    return [];
+/**
+ * 科目に紐づく評価データを取得。Subject.evaluation を優先し、なければ evaluationsData から名前で検索。
+ * @param {Subject} subject
+ * @returns {Object|null} - components 等を持つ評価オブジェクト
+ */
+function getEvaluationBySubject(subject) {
+  if (!subject) return null;
+  if (subject.evaluation != null && typeof subject.evaluation === 'object') {
+    return subject.evaluation;
   }
-  
-  const uniqueSubjectsMap = new Map();
-  const timetable = currentSemester.timetable;
-  const days = ['月', '火', '水', '木', '金'];
-  
-  // Extract subjects from timetable
-  for (let periodIndex = 0; periodIndex < timetable.length; periodIndex++) {
-    for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
-      const subjectName = timetable[periodIndex] && timetable[periodIndex][dayIndex];
-      if (subjectName && subjectName.trim() !== '') {
-        // Skip if already exists
-        if (!uniqueSubjectsMap.has(subjectName)) {
-          // Search from subjectsMaster
-          const subject = subjectsMaster.find(s => s.name === subjectName);
-          if (subject) {
-            uniqueSubjectsMap.set(subjectName, {
-              id: subject.id,
-              name: subject.name,
-              dataId: subject.dataId
-            });
-          } else {
-            // Create dynamically if not found in subjectsMaster
-            const dataId = subjectName.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '-');
-            uniqueSubjectsMap.set(subjectName, {
-              id: dataId,
-              name: subjectName,
-              dataId: dataId
-            });
-          }
-        }
-      }
-    }
-  }
-  
-  return Array.from(uniqueSubjectsMap.values());
-}
-function getEvaluationByName(name) {
   if (!evaluationsData) return null;
-  // Synonym mapping
-  const aliasMap = {
-    '電磁気学A': '電磁気',
-    '電磁気': '電磁気',
-    '電基礎': '電電電気',
-    '電電電気': '電電電気',
-    '力学A': '力学',
-    '力学': '力学'
-  };
-  const key = aliasMap[name] || name;
   const list = evaluationsData.subjects || [];
-  // displayName priority → also match by subjectId
+  const aliasMap = {
+    '電磁気学A': '電磁気', '電磁気': '電磁気',
+    '電基礎': '電電電気', '電電電気': '電電電気',
+    '力学A': '力学', '力学': '力学'
+  };
+  const key = aliasMap[subject.name] || subject.name;
   return list.find(s => s.displayName === key || s.subjectId === key) || null;
 }
 
@@ -2067,61 +2004,51 @@ function getTodayISO() {
   return `${year}-${month}-${day}`;
 }
 
-function getCurrentWeekForSubject(subjectName, todayISO = getTodayISO()) {
-  // Search from subjectsMaster
-  let subject = subjectsMaster.find(s => s.name === subjectName);
-  
-  // Search from current timetable data if not found in subjectsMaster
-  if (!subject && window.currentTimetableData) {
-    const days = ['月', '火', '水', '木', '金'];
-    const periods = ['1限', '2限', '3限', '4限', '5限'];
-    
-    for (let periodIndex = 0; periodIndex < periods.length; periodIndex++) {
-      for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
-        if (window.currentTimetableData[periodIndex] && 
-            window.currentTimetableData[periodIndex][dayIndex] === subjectName) {
-          subject = {
-            name: subjectName,
-            dayOfWeek: getDayOfWeek(days[dayIndex]),
-            slot: periodIndex + 1
-          };
-          break;
-        }
+/** Get first slot (period, day) for a subject from the timetable */
+function getSubjectSlotFromTimetable(subjectId) {
+  if (!subjectId || !window.currentTimetableData) return null;
+  const days = ['月', '火', '水', '木', '金'];
+  const periods = ['1限', '2限', '3限', '4限', '5限'];
+  for (let pi = 0; pi < 5; pi++) {
+    for (let di = 0; di < 5; di++) {
+      if (window.currentTimetableData[pi] && window.currentTimetableData[pi][di] === subjectId) {
+        return { period: periods[pi], day: days[di] };
       }
-      if (subject) break;
     }
   }
-  
-  if (!subject) {
-    return 1;
-  }
-  
-  // Get class days for that subject
-  const allDays = getClassDaysByWeekday(subject.dayOfWeek);
-  const pastDays = allDays.filter(d => d.date <= todayISO);
-  const weekCount = Math.max(pastDays.length, 1);
-  
-  return weekCount;
+  return null;
 }
 
-// Function to generate timetable (integrated version - correctly inherits @tabler functionality)
+/** Get current week number for a subject based on its slot in the timetable */
+function getCurrentWeekForSubject(subjectId, todayISO = getTodayISO()) {
+  if (!subjectId || !window.currentTimetableData) return 1;
+  const days = ['月', '火', '水', '木', '金'];
+  for (let periodIndex = 0; periodIndex < 5; periodIndex++) {
+    for (let dayIndex = 0; dayIndex < 5; dayIndex++) {
+      const cellId = window.currentTimetableData[periodIndex] && window.currentTimetableData[periodIndex][dayIndex];
+      if (cellId === subjectId) {
+        const dayOfWeek = getDayOfWeek(days[dayIndex]);
+        const allDays = getClassDaysByWeekday(dayOfWeek);
+        const pastDays = allDays.filter(d => d.date <= todayISO);
+        return Math.max(pastDays.length, 1);
+      }
+    }
+  }
+  return 1;
+}
+
+// Function to generate timetable (subject ID based)
 function generateTimetable(timetableData) {
-  // Save current timetable data
   window.currentTimetableData = timetableData;
   
-  // Clear existing timetable (prevent duplicate event listeners)
   const timetable = document.getElementById('timetable');
-  if (timetable) {
-    timetable.innerHTML = '';
-  }
+  if (timetable) timetable.innerHTML = '';
 
-  // Add header
   const days = ['月', '火', '水', '木', '金'];
   const headerCell = document.createElement('div');
   headerCell.className = 'cell header';
   timetable.appendChild(headerCell);
 
-  // Get current weekday and time (inherited from @tabler)
   const now = new Date();
   const currentDay = ['日', '月', '火', '水', '木', '金', '土'][now.getDay()];
   const currentHour = now.getHours();
@@ -2131,9 +2058,7 @@ function generateTimetable(timetableData) {
   days.forEach(day => {
     const cell = document.createElement('div');
     cell.className = 'cell header';
-    if (day === currentDay) {
-      cell.classList.add('current-day-header');
-    }
+    if (day === currentDay) cell.classList.add('current-day-header');
     cell.textContent = day;
     timetable.appendChild(cell);
   });
@@ -2146,19 +2071,14 @@ function generateTimetable(timetableData) {
     { name: '5限', time: '17:00-18:40' }
   ];
 
-  // Convert time range for each period to minutes (inherited from @tabler)
   const periodTimes = periods.map(period => {
     const [start, end] = period.time.split('-');
     const [startHour, startMinute] = start.split(':').map(Number);
     const [endHour, endMinute] = end.split(':').map(Number);
-    return {
-      start: startHour * 60 + startMinute,
-      end: endHour * 60 + endMinute
-    };
+    return { start: startHour * 60 + startMinute, end: endHour * 60 + endMinute };
   });
 
   periods.forEach((period, periodIndex) => {
-    // Time label
     const timeCell = document.createElement('div');
     timeCell.className = 'cell time';
     const periodName = document.createElement('div');
@@ -2171,35 +2091,28 @@ function generateTimetable(timetableData) {
     timeCell.appendChild(periodTime);
     timetable.appendChild(timeCell);
 
-        // Cells for each weekday
-        days.forEach((day, dayIndex) => {
-          const cell = document.createElement('div');
-          cell.className = 'cell';
-          cell.setAttribute('data-period', period.name);
-          cell.setAttribute('data-day', day);
-          
-          // Add class based on current weekday and time (inherited from @tabler)
-          if (day === currentDay) {
-            const periodTime = periodTimes[periodIndex];
-            if (currentTime >= periodTime.start && currentTime <= periodTime.end) {
-              cell.classList.add('current-period');
-            }
-          }
+    days.forEach((day, dayIndex) => {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.setAttribute('data-period', period.name);
+      cell.setAttribute('data-day', day);
       
-      const subjectName = timetableData[periodIndex][dayIndex];
+      if (day === currentDay) {
+        const pt = periodTimes[periodIndex];
+        if (currentTime >= pt.start && currentTime <= pt.end) cell.classList.add('current-period');
+      }
+
+      const subjectId = (timetableData[periodIndex] && timetableData[periodIndex][dayIndex]) || '';
+      const subject = subjectId ? getSubjectById(subjectId) : null;
       
-      if (subjectName) {
+      if (subject) {
+        cell.setAttribute('data-subject-id', subject.id);
         const title = document.createElement('div');
         title.className = 'title';
-        title.textContent = subjectName;
-        
-        // Set background color according to subject (using fixed colors from @tabler)
-        const color = assignColorToSubject(subjectName);
-        cell.style.backgroundColor = color;
-        
+        title.textContent = subject.name;
+        cell.style.backgroundColor = subject.color || '#F5F5F5';
         cell.appendChild(title);
 
-        // Generate progress elements (bar and text) within cell
         const progressWrap = document.createElement('div');
         progressWrap.className = 'progress';
         const bar = document.createElement('div');
@@ -2213,10 +2126,8 @@ function generateTimetable(timetableData) {
         progressText.id = `text-${period.name}-${day}`;
         cell.appendChild(progressText);
 
-          // Learning time display removed
-
         cell.addEventListener('click', () => {
-          showTaskModal(period.name, day, subjectName);
+          showTaskModal(period.name, day, subject.id);
         });
       }
       
@@ -2294,8 +2205,7 @@ function updateTaskNumbers(tasks) {
   
   Object.values(tasks).forEach(task => {
     if (task.completed) return;
-    
-    const key = `${task.period}_${task.day}_${task.title}`;
+    const key = task.subjectId || `${task.period || ''}_${task.day || ''}_${task.title || ''}`;
     if (!taskAggregates[key]) {
       taskAggregates[key] = {
         count: 0,
@@ -2308,7 +2218,7 @@ function updateTaskNumbers(tasks) {
     const aggregate = taskAggregates[key];
     aggregate.count += 1;
 
-    const normalizedType = normalizeTaskType(task.taskType) || 'Assignment';
+    const normalizedType = normalizeTaskType(task.type || task.taskType) || 'Assignment';
     const taskDueTime = getDueTime(task.dueDate);
 
     if (taskDueTime < aggregate.dueTime) {
@@ -2329,23 +2239,16 @@ function updateTaskNumbers(tasks) {
   const cells = document.querySelectorAll('.cell:not(.header):not(.time)');
   
   cells.forEach(cell => {
-    const title = cell.querySelector('.title')?.textContent;
-    if (title) {
-      const period = cell.getAttribute('data-period');
-      const day = cell.getAttribute('data-day');
-      const key = `${period}_${day}_${title}`;
-      const aggregate = taskAggregates[key];
-      const count = aggregate?.count || 0;
-      const priorityType = aggregate?.type || 'Assignment';
+    const subjectId = cell.getAttribute('data-subject-id');
+    if (!subjectId) return;
+    const aggregate = taskAggregates[subjectId];
+    const count = aggregate?.count || 0;
+    const priorityType = aggregate?.type || 'Assignment';
 
-      // Remove existing number display
-      const existingCircle = cell.querySelector('.number-circle');
-      if (existingCircle) {
-        existingCircle.remove();
-      }
+    const existingCircle = cell.querySelector('.number-circle');
+    if (existingCircle) existingCircle.remove();
 
-      // Display only if task count is greater than 0
-      if (count > 0) {
+    if (count > 0) {
         const numberCircle = document.createElement('div');
         numberCircle.className = 'number-circle';
         numberCircle.textContent = count;
@@ -2384,12 +2287,11 @@ function updateTaskNumbers(tasks) {
           }
         }
 
-        numberCircle.addEventListener('click', (e) => {
-          e.stopPropagation();
-          showTaskPopup(period, day, title);
-        });
-        cell.appendChild(numberCircle);
-      }
+      numberCircle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showTaskPopup(subjectId);
+      });
+      cell.appendChild(numberCircle);
     }
   });
   
@@ -2399,122 +2301,23 @@ function updateTaskNumbers(tasks) {
 
 // Function to update timetable progress bars
 function updateTimetableProgressBars() {
-  const subjects = subjectsData || [];
-
-  // Process each cell
   const cells = document.querySelectorAll('.cell:not(.header):not(.time)');
   cells.forEach(cell => {
-    const title = cell.querySelector('.title')?.textContent;
-    if (title) {
-      const period = cell.getAttribute('data-period');
-      const day = cell.getAttribute('data-day');
-      
-      // Search for corresponding dataId
-      let subject = subjectsMaster.find(s => 
-        s.name === title && 
-        s.dayOfWeek === getDayOfWeek(day) && 
-        s.slot === getSlotNumber(period)
-      );
-      
-      // Create dynamically if not found in subjectsMaster
-      if (!subject) {
-        // More secure dataId generation (Japanese compatible)
-        const dataId = `${title.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '-')}`;
-        subject = {
-          id: dataId,
-          name: title,
-          dayOfWeek: getDayOfWeek(day),
-          slot: getSlotNumber(period),
-          dataId: dataId
-        };
-      }
-      
-      if (subject) {
-        // More flexible search: search by id, dataId, name
-        let s = subjects.find(sub => 
-          sub.id === subject.dataId || 
-          sub.dataId === subject.dataId || 
-          sub.name === subject.name
-        );
-        
-        // Special search for CS subjects
-        if (!s && title === 'CS') {
-          s = subjects.find(sub => 
-            sub.name === 'CS' || 
-            sub.dataId === 'CS' || 
-            sub.id === 'CS' ||
-            sub.id === 'mon-1'
-          );
-        }
-        
-        if (!s) {
-          // 科目データが存在しない場合は作成
-          s = {
-            id: subject.dataId,
-            name: subject.name,
-            dataId: subject.dataId,
-            progress: 0,
-            totalTime: 0,
-            semesterId: currentSemesterId, // 学期IDを設定
-            lastUpdated: new Date().toISOString()
-          };
-          subjects.push(s);
-          saveSubjects(subjects);
-        }
-        
-        // Clear existing evaluation chip
-        const existingChips = cell.querySelector('.eval-chips');
-        if (existingChips) existingChips.remove();
+    const subjectId = cell.getAttribute('data-subject-id');
+    if (!subjectId) return;
+    
+    const s = getSubjectById(subjectId);
+    const bar = cell.querySelector('.progress-bar');
+    const text = cell.querySelector('.progress-text');
 
-        const bar = cell.querySelector('.progress-bar');
-        const text = cell.querySelector('.progress-text');
-
-        if (displayMode === 'evaluation') {
-          // Evaluation display: progress UI is always hidden
-          if (bar) bar.style.display = 'none';
-          if (text) text.style.display = 'none';
-          // Display evaluation chip with title name (or subject name)
-          const evalName = (s && s.name) ? s.name : title;
-          const evalInfo = getEvaluationByName(evalName);
-          if (evalInfo && Array.isArray(evalInfo.components)) {
-            const chips = document.createElement('div');
-            chips.className = 'eval-chips';
-            evalInfo.components.slice(0, 3).forEach(c => {
-              const chip = document.createElement('div');
-              chip.className = 'eval-chip';
-              const weight = c.weightType === 'points' ? `${c.weight}点` : `${c.weight}%`;
-              chip.innerHTML = `${c.type}<span class=\"w\">${weight}</span>`;
-              chips.appendChild(chip);
-            });
-            cell.appendChild(chips);
-          }
-        } else if (s) {
-          // Progress display
-          const denom = getCurrentWeekForSubject(s.name);
-          const pct = Math.max(0, Math.min(100, Math.floor((denom ? (s.progress / denom) : 0) * 100)));
-          if (bar) {
-            bar.style.display = '';
-            bar.style.width = `${pct}%`;
-            bar.className = `progress-bar ${computeProgressColorClass(pct)}`;
-          }
-          if (text) {
-            text.style.display = '';
-            text.textContent = `${s.progress || 0}/${denom}`;
-          }
-        } else {
-          // Progress display when no data: initialize bar and text
-          if (bar) {
-            bar.style.display = '';
-            bar.style.width = `0%`;
-            bar.className = `progress-bar ${computeProgressColorClass(0)}`;
-          }
-          if (text) {
-            const denom = getCurrentWeekForSubject(title);
-            text.style.display = '';
-            text.textContent = `0/${denom}`;
-          }
-        }
-      }
+    if (s) {
+      const denom = getCurrentWeekForSubject(s.id);
+      const pct = Math.max(0, Math.min(100, Math.floor((denom ? (s.progress / denom) : 0) * 100)));
+      if (bar) { bar.style.display = ''; bar.style.width = `${pct}%`; bar.className = `progress-bar ${computeProgressColorClass(pct)}`; }
+      if (text) { text.style.display = ''; text.textContent = `${s.progress || 0}/${denom}`; }
+    } else {
+      if (bar) { bar.style.display = ''; bar.style.width = '0%'; bar.className = `progress-bar ${computeProgressColorClass(0)}`; }
+      if (text) { text.style.display = ''; text.textContent = '0/1'; }
     }
   });
 }
@@ -2542,23 +2345,13 @@ function computeProgressColorClass(pct) {
 
 // 全体統計を更新する関数
 function updateSummaryStats() {
-  const subjects = subjectsData || [];
-  
-  // 全体進捗を計算（各科目の進捗と週数を合計）
+  const subjects = getSubjectsForSemester(currentSemesterId);
   let totalProgress = 0;
   let totalRequired = 0;
   
-  getUniqueSubjects().forEach(uniqueSubject => {
-    // より柔軟な検索：id、dataId、nameで検索
-    const subject = subjects.find(s => 
-      s.id === uniqueSubject.id || 
-      s.dataId === uniqueSubject.dataId || 
-      s.name === uniqueSubject.name
-    );
-    
-    const currentWeek = getCurrentWeekForSubject(uniqueSubject.name);
-    const progress = subject ? subject.progress || 0 : 0;
-    
+  subjects.forEach(subject => {
+    const currentWeek = getCurrentWeekForSubject(subject.id);
+    const progress = subject.progress || 0;
     totalProgress += progress;
     totalRequired += currentWeek;
   });
@@ -2613,70 +2406,101 @@ function updateIncompleteTasksCount(tasks) {
   }
 }
 
-// モーダル表示関数（統合版）
-function showTaskModal(period, day, title) {
-  const modal = document.getElementById('taskModal');
-  
-  // 既にモーダルが開いている場合は何もしない（2重で開くのを防ぐ）
-  if (modal && modal.style.display === 'block') {
-    return;
+// モーダル表示関数（subjectId ベース）。displayText を優先、なければ components 形式をフォーマット
+function formatEvaluationForModal(evalObj) {
+  if (!evalObj) return '';
+  if (typeof evalObj.displayText === 'string' && evalObj.displayText.trim()) return evalObj.displayText.trim();
+  if (!Array.isArray(evalObj.components) || evalObj.components.length === 0) return '';
+  return evalObj.components.slice(0, 4).map(c => {
+    const w = c.weightType === 'points' ? `${c.weight}点` : `${c.weight}%`;
+    return `${c.type}${w}`;
+  }).join(' · ');
+}
+
+function refreshModalEvaluation() {
+  const subjectId = modalState?.subjectId;
+  if (!subjectId) return;
+  const subject = getSubjectById(subjectId);
+  const evalObj = subject ? getEvaluationBySubject(subject) : null;
+  const text = formatEvaluationForModal(evalObj);
+  const span = document.getElementById('modalEvaluation');
+  const input = document.getElementById('modalEvaluationInput');
+  if (span) {
+    span.textContent = text || '（未設定）';
+    span.classList.toggle('empty', !text);
   }
+  if (input) input.value = text || '';
+}
+
+function setEvaluationEditMode(editing) {
+  const span = document.getElementById('modalEvaluation');
+  const input = document.getElementById('modalEvaluationInput');
+  const btn = document.getElementById('modalEvaluationEditBtn');
+  if (!span || !input || !btn) return;
+  if (editing) {
+    const current = span.textContent || '';
+    input.value = current === '（未設定）' ? '' : current;
+    span.style.display = 'none';
+    input.style.display = '';
+    input.focus();
+    btn.textContent = '✓';
+    btn.title = '保存';
+    btn.classList.add('edit-mode');
+  } else {
+    span.style.display = '';
+    input.style.display = 'none';
+    btn.textContent = '✎';
+    btn.title = '評価を編集';
+    btn.classList.remove('edit-mode');
+    refreshModalEvaluation();
+  }
+}
+
+function saveEvaluationFromEdit() {
+  const input = document.getElementById('modalEvaluationInput');
+  const subjectId = modalState?.subjectId;
+  if (!input || !subjectId) return;
+  const subject = getSubjectById(subjectId);
+  if (!subject) return;
+  const text = (input.value || '').trim();
+  subject.evaluation = text ? { displayText: text } : null;
+  subjectsById[subjectId] = subject;
+  saveSubjects();
+  setEvaluationEditMode(false);
+  updateTimetableProgressBars();
+}
+
+function showTaskModal(period, day, subjectId) {
+  const modal = document.getElementById('taskModal');
+  if (modal && modal.style.display === 'block') return;
   
+  const subject = getSubjectById(subjectId);
+  const title = subject ? subject.name : '';
+  
+  resetModalToAddMode();
   const modalTitle = document.getElementById('modalTitle');
   const modalSubtitle = document.getElementById('modalSubtitle');
-
-  // Reset modal to add mode
-  resetModalToAddMode();
-  
-  // Set modal header
+  const modalEvaluation = document.getElementById('modalEvaluation');
   if (modalTitle) modalTitle.textContent = title;
   if (modalSubtitle) modalSubtitle.textContent = `${period} ${day}`;
-  
-  // モーダルを表示
-  modal.style.display = 'block';
-
-  // 対応するdataIdを検索
-  const slotNum = getSlotNumber(period);
-  const dayOfWeek = getDayOfWeek(day);
-  let cellSubject = subjectsMaster.find(s => 
-    s.name === title && 
-    s.dayOfWeek === dayOfWeek && 
-    s.slot === slotNum
-  );
-  
-  // subjectsMasterに見つからない場合は、動的に作成
-  if (!cellSubject) {
-    // より安全なdataId生成（日本語対応）
-    const dataId = `${title.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '-')}`;
-    cellSubject = {
-      id: dataId,
-      name: title,
-      dayOfWeek: dayOfWeek,
-      slot: slotNum,
-      dataId: dataId
-    };
+  if (modalEvaluation) {
+    const evalObj = subject ? getEvaluationBySubject(subject) : null;
+    const text = formatEvaluationForModal(evalObj);
+    modalEvaluation.textContent = text || '（未設定）';
+    modalEvaluation.classList.toggle('empty', !text);
   }
   
-  modalState = { name: title, slot: slotNum, dataId: cellSubject?.dataId };
+  modal.style.display = 'block';
+  modalState = { subjectId, period, day };
   
-  // モーダルが表示された後に日付を設定
-  setTimeout(() => {
-    setDate('nextWeek');
-  }, 100);
+  setTimeout(() => setDate('nextWeek'), 100);
+  setTimeout(() => updateModalProgress(subjectId), 200);
   
-  // 進捗管理の進捗を更新（少し遅延させてデータ読み込みを待つ）
-  setTimeout(() => {
-    if (cellSubject) {
-      updateModalProgress(cellSubject.dataId);
-    }
-  }, 200);
-  
-  // フォームをリセット
   const taskForm = document.getElementById('taskForm');
   if (taskForm) {
     taskForm.reset();
     document.querySelectorAll('.task-type-btn').forEach(btn => btn.classList.remove('active'));
-    const defaultBtn = document.querySelector('.task-type-btn[data-type="課題"]');
+    const defaultBtn = document.querySelector('.task-type-btn[data-type="Assignment"]');
     if (defaultBtn) defaultBtn.classList.add('active');
   }
 }
@@ -2684,24 +2508,12 @@ function showTaskModal(period, day, title) {
 // モーダル内タブ切り替え（削除済み）
 // 統合モーダルではタブ機能は不要
 
-// モーダルの進捗を更新（プログレスバー部分は削除）
-function updateModalProgress(dataId) {
-  if (!dataId) {
-    return;
-  }
-  
-  const subjects = subjectsData || [];
-  const s = subjects.find(x => x.dataId === dataId);
-  
+function updateModalProgress(subjectId) {
+  if (!subjectId) return;
+  const s = getSubjectById(subjectId);
   if (s) {
-    const currentProgress = s.progress || 0;
-    const denom = getCurrentWeekForSubject(s.name);
-    
-    // カスタム入力をリセット
     const customInput = document.getElementById('customTimeInput');
-    if (customInput) {
-      customInput.value = '';
-    }
+    if (customInput) customInput.value = '';
   }
 }
 
@@ -2765,27 +2577,19 @@ function setDate(type) {
 // 進捗不足タスクを生成する関数
 function generateProgressDeficitTasks() {
   const progressDeficitTasks = [];
-  const subjects = subjectsData || [];
+  const subjects = getSubjectsForSemester(currentSemesterId);
   
-  getUniqueSubjects().forEach(uniqueSubject => {
-    // より柔軟な検索：id、dataId、nameで検索
-    const subject = subjects.find(s => 
-      s.id === uniqueSubject.id || 
-      s.dataId === uniqueSubject.dataId || 
-      s.name === uniqueSubject.name
-    );
-    
-    const currentWeek = getCurrentWeekForSubject(uniqueSubject.name);
-    const progress = subject ? subject.progress || 0 : 0;
+  subjects.forEach(subject => {
+    const currentWeek = getCurrentWeekForSubject(subject.id);
+    const progress = subject.progress || 0;
     const deficit = currentWeek - progress;
-    
-    // 不足分がある場合のみタスクとして追加
-    if (deficit > 0 && uniqueSubject.name && uniqueSubject.name.trim() !== '') {
+    if (deficit > 0 && subject.name && subject.name.trim() !== '') {
       progressDeficitTasks.push({
-        subjectName: uniqueSubject.name,
-        currentWeek: currentWeek,
-        progress: progress,
-        deficit: deficit
+        subjectId: subject.id,
+        subjectName: subject.name,
+        currentWeek,
+        progress,
+        deficit
       });
     }
   });
@@ -2796,70 +2600,27 @@ function generateProgressDeficitTasks() {
   return progressDeficitTasks;
 }
 
-// 科目名からdataIdを取得する関数
-function getDataIdFromSubjectName(subjectName) {
-  const subject = subjectsMaster.find(s => s.name === subjectName);
-  if (subject) {
-    return subject.dataId;
-  }
-  // subjectsMasterに見つからない場合は、科目名をそのままdataIdとして使用
-  return subjectName.replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '-');
-}
-
-// 進捗を更新する共通関数
-async function updateProgressForSubject(subjectName, increment = 1) {
-  if (!currentSemesterId) {
-    console.warn('Cannot update progress because no semester is selected');
+// 進捗を更新する共通関数 (subjectId ベース)
+async function updateProgressForSubject(subjectId, increment = 1) {
+  if (!currentSemesterId || !subjectId) {
+    console.warn('Cannot update progress: no semester or subject selected');
     return false;
   }
+  await loadSubjects();
+  let s = getSubjectById(subjectId);
+  if (!s) return false;
   
-  const subjects = subjectsData || await loadSubjects();
-  const dataId = getDataIdFromSubjectName(subjectName);
+  const oldProgress = s.progress || 0;
+  const newProgress = Math.max(0, oldProgress + increment);
+  if (newProgress === oldProgress && increment < 0) return false;
   
-  // より柔軟な検索：id、dataId、nameで検索
-  let s = subjects.find(x => 
-    x.dataId === dataId || 
-    x.id === dataId || 
-    x.name === subjectName
-  );
-  
-  if (!s) {
-    // 科目データが存在しない場合は作成
-    s = {
-      id: dataId,
-      name: subjectName,
-      dataId: dataId,
-      progress: 0,
-      totalTime: 0,
-      semesterId: currentSemesterId, // 学期IDを設定
-      lastUpdated: new Date().toISOString()
-    };
-    subjects.push(s);
-  }
-  
-  if (s) {
-    const oldProgress = s.progress || 0;
-    const newProgress = Math.max(0, oldProgress + increment);
-    
-    // 進捗が実際に変更されたか確認
-    if (newProgress === oldProgress && increment < 0) {
-      // 進捗が0で減らそうとした場合
-      return false;
-    }
-    
-    s.progress = newProgress;
-    s.semesterId = currentSemesterId; // 学期IDを確実に設定
-    s.lastUpdated = new Date().toISOString();
-    saveSubjects(subjects);
-    updateTimetableProgressBars();
-    updateSummaryStats();
-    // 未完了タスク数を更新（進捗不足タスク数が変わる可能性があるため）
-    if (window.tasks) {
-      updateIncompleteTasksCount(window.tasks);
-    }
-    return true;
-  }
-  return false;
+  s.progress = newProgress;
+  subjectsById[subjectId] = s;
+  saveSubjects();
+  updateTimetableProgressBars();
+  updateSummaryStats();
+  if (window.tasks) updateIncompleteTasksCount(window.tasks);
+  return true;
 }
 
 // 進捗不足タスク要素を作成する関数
@@ -2895,7 +2656,7 @@ function createProgressDeficitTaskElement(task) {
     e.stopPropagation();
     triggerButtonRipple(understandBtn, e.clientX, e.clientY);
     
-    const success = await updateProgressForSubject(task.subjectName, 1);
+    const success = await updateProgressForSubject(task.subjectId, 1);
     
     if (success) {
       // お祝い演出
@@ -2920,7 +2681,7 @@ function createProgressDeficitTaskElement(task) {
     e.stopPropagation();
     triggerButtonRipple(ununderstandBtn, e.clientX, e.clientY);
     
-    const success = await updateProgressForSubject(task.subjectName, -1);
+    const success = await updateProgressForSubject(task.subjectId, -1);
     
     if (success) {
       // タスク一覧を再表示（進捗が更新されたので不足分も変わる）
@@ -3039,9 +2800,8 @@ function createTaskElement(taskId, task) {
     div.classList.add('completed');
   }
 
-  if (task.taskType) {
-    div.classList.add(`task-type-${task.taskType}`);
-  }
+  const taskType = task.type || task.taskType;
+  if (taskType) div.classList.add(`task-type-${taskType}`);
 
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
@@ -3065,9 +2825,11 @@ function createTaskElement(taskId, task) {
   const content = document.createElement('div');
   content.className = 'task-content';
 
+  const subject = getSubjectById(task.subjectId);
+  const subjectName = subject ? subject.name : (task.title || 'Unknown');
   const title = document.createElement('div');
   title.className = 'task-title';
-  title.textContent = `${task.title} (${task.period} ${task.day})`;
+  title.textContent = subjectName;
 
   const details = document.createElement('div');
   details.className = 'task-details';
@@ -3212,20 +2974,19 @@ function formatDueDate(date) {
 }
 
 // タスク一覧ポップアップを表示する関数
-function showTaskPopup(period, day, title) {
-  // 既存のポップアップを削除
+function showTaskPopup(subjectId) {
   const existingPopup = document.querySelector('.task-popup');
-  if (existingPopup) {
-    existingPopup.remove();
-  }
-  
+  if (existingPopup) existingPopup.remove();
+
+  const subject = getSubjectById(subjectId);
+  const title = subject ? subject.name : 'Tasks';
+
   const popup = document.createElement('div');
   popup.className = 'task-popup';
   popup.innerHTML = `
     <div class="task-popup-content">
       <div class="task-popup-header">
         <h2>${title}</h2>
-        <p>${period} ${day}</p>
       </div>
       <div class="task-popup-list" id="taskPopupList"></div>
     </div>
@@ -3236,12 +2997,7 @@ function showTaskPopup(period, day, title) {
 
   const taskList = document.getElementById('taskPopupList');
   const tasks = Object.entries(window.tasks || {})
-    .filter(([, task]) => 
-      !task.completed && 
-      task.period === period && 
-      task.day === day && 
-      task.title === title
-    )
+    .filter(([, task]) => !task.completed && task.subjectId === subjectId)
     .sort(([, a], [, b]) => new Date(a.dueDate) - new Date(b.dueDate));
 
   if (tasks.length === 0) {
@@ -3302,30 +3058,6 @@ function wireEvents() {
     });
   });
 
-  // 表示モードトグル
-  const modeSegment = document.getElementById('modeSegment');
-  if (modeSegment) {
-    const segButtons = modeSegment.querySelectorAll('.seg-btn');
-    const setMode = async (mode) => {
-      displayMode = mode;
-      // active切り替え
-      segButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
-      modeSegment.classList.toggle('evaluation-selected', mode === 'evaluation');
-      // Bodyクラスで強制表示
-      if (mode === 'evaluation') {
-        document.body.classList.add('evaluation-mode');
-      } else {
-        document.body.classList.remove('evaluation-mode');
-      }
-      updateTimetableProgressBars();
-    };
-    segButtons.forEach(btn => {
-      btn.addEventListener('click', () => setMode(btn.dataset.mode));
-    });
-    // 初期状態反映
-    setMode(displayMode);
-  }
-
   // モーダル内タブ切り替え（削除済み）
   // 統合モーダルではタブ機能は不要
 
@@ -3362,11 +3094,8 @@ function wireEvents() {
       updateTask(taskId, taskData);
     } else {
       // Addモード
-      const modalTitle = document.getElementById('modalTitle').textContent;
-      const modalSubtitle = document.getElementById('modalSubtitle').textContent;
-      const [period, day] = modalSubtitle.split(' ');
-
-      saveTask(period, day, modalTitle, taskData);
+      const subjectId = modalState.subjectId;
+      if (subjectId) saveTask(subjectId, taskData);
     }
     
     // モーダルを閉じる
@@ -3380,36 +3109,9 @@ function wireEvents() {
   const understandBtn = document.getElementById('understandBtn');
   understandBtn.addEventListener('click', async (e) => {
     triggerButtonRipple(understandBtn, e.clientX, e.clientY);
-    const subjects = subjectsData || await loadSubjects();
-    // より柔軟な検索：id、dataId、nameで検索
-    let s = subjects.find(x => 
-      x.dataId === modalState.dataId || 
-      x.id === modalState.dataId || 
-      x.name === modalState.name
-    );
-    
-    if (!s && modalState.dataId) {
-      // 科目データが存在しない場合は作成
-      s = {
-        id: modalState.dataId,
-        name: modalState.name,
-        dataId: modalState.dataId,
-        progress: 0,
-        totalTime: 0,
-        lastUpdated: new Date().toISOString()
-      };
-      subjects.push(s);
-    }
-    
-    if (s) {
-      s.progress = (s.progress || 0) + 1;
-      s.lastUpdated = new Date().toISOString();
-      saveSubjects(subjects);
-      updateTimetableProgressBars();
-      updateSummaryStats();
-      // モーダルの進捗バーも更新
-      updateModalProgress(s.dataId);
-      // お祝い演出（ボタン位置で/フォールバックはボタン中央）
+    const success = await updateProgressForSubject(modalState.subjectId, 1);
+    if (success) {
+      updateModalProgress(modalState.subjectId);
       const btnRect = understandBtn.getBoundingClientRect();
       const px = e.clientX || (btnRect.left + btnRect.width / 2);
       const py = e.clientY || (btnRect.top + btnRect.height / 2);
@@ -3418,29 +3120,44 @@ function wireEvents() {
     }
   });
 
+  // 評価編集ボタン（鉛筆 / 保存）
+  const evaluationEditBtn = document.getElementById('modalEvaluationEditBtn');
+  const modalEvaluationInput = document.getElementById('modalEvaluationInput');
+  if (evaluationEditBtn) {
+    evaluationEditBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (evaluationEditBtn.classList.contains('edit-mode')) {
+        saveEvaluationFromEdit();
+      } else {
+        setEvaluationEditMode(true);
+      }
+    });
+  }
+  if (modalEvaluationInput) {
+    modalEvaluationInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        saveEvaluationFromEdit();
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setEvaluationEditMode(false);
+      }
+    });
+  }
+
   // 戻すボタン
   document.getElementById('ununderstandBtn').addEventListener('click', async () => {
-    const subjects = subjectsData || await loadSubjects();
-    // より柔軟な検索：id、dataId、nameで検索
-    let s = subjects.find(x => 
-      x.dataId === modalState.dataId || 
-      x.id === modalState.dataId || 
-      x.name === modalState.name
-    );
-    
-    if (s && s.progress > 0) {
-      s.progress = Math.max(0, (s.progress || 0) - 1);
-      s.lastUpdated = new Date().toISOString();
-      saveSubjects(subjects);
-      updateTimetableProgressBars();
-      updateSummaryStats();
-      // モーダルの進捗バーも更新
-      updateModalProgress(s.dataId);
+    const success = await updateProgressForSubject(modalState.subjectId, -1);
+    if (success) {
+      updateModalProgress(modalState.subjectId);
       document.getElementById('taskModal').style.display = 'none';
-    } else if (s && s.progress === 0) {
-      alert('理解度は既に0回です。これ以上減らすことはできません。');
     } else {
-      alert('科目データが見つかりません。');
+      const s = getSubjectById(modalState.subjectId);
+      if (s && s.progress === 0) alert('理解度は既に0回です。これ以上減らすことはできません。');
+      else alert('科目データが見つかりません。');
     }
   });
 
@@ -3511,7 +3228,6 @@ async function boot() {
   initializeManageTab();
   
   // 時間割を初期化・読み込み
-  initializeTimetable();
   loadTimetable();
   loadTasks();
   
@@ -3534,16 +3250,7 @@ async function boot() {
     
   }, 1000);
   
-  // イベントリスナー設定
   wireEvents();
-
-  // 初期モードのCSSを反映
-  if (displayMode === 'evaluation') {
-    document.body.classList.add('evaluation-mode');
-  } else {
-    document.body.classList.remove('evaluation-mode');
-  }
-  
 }
 
 

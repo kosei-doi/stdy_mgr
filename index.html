@@ -73,11 +73,6 @@
         <div class="tab" data-tab="tasks">Tasks</div>
         <div class="tab" data-tab="manage">Manage</div>
       </div>
-      <div class="segmented-toggle" id="modeSegment">
-        <button type="button" class="seg-btn active" data-mode="progress">Progress</button>
-        <button type="button" class="seg-btn" data-mode="evaluation">Evaluation</button>
-        <span class="seg-indicator"></span>
-      </div>
     </div>
   </header>
   
@@ -126,7 +121,14 @@
   <div id="taskModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 id="modalTitle">Subject Management</h2>
+        <div class="modal-header-title-row">
+          <h2 id="modalTitle">Subject Management</h2>
+          <div class="modal-evaluation-wrap">
+            <span id="modalEvaluation" class="modal-evaluation"></span>
+            <input type="text" id="modalEvaluationInput" class="modal-evaluation-input" placeholder="評価を自由に入力" style="display: none;">
+            <button type="button" id="modalEvaluationEditBtn" class="modal-evaluation-edit-btn" title="評価を編集" aria-label="評価を編集">✎</button>
+          </div>
+        </div>
         <p id="modalSubtitle">Task creation and progress management</p>
       </div>
 
