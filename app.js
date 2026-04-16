@@ -2492,8 +2492,8 @@ function showTaskModal(period, day, subjectId) {
   
   modal.style.display = 'block';
   modalState = { subjectId, period, day };
-  
-  setTimeout(() => setDate('nextWeek'), 100);
+
+  setTimeout(() => setDate('nextMinusOne'), 100);
   setTimeout(() => updateModalProgress(subjectId), 200);
   
   const taskForm = document.getElementById('taskForm');
@@ -2521,27 +2521,34 @@ function updateModalProgress(subjectId) {
 function setDate(type) {
   const modalSubtitle = document.getElementById('modalSubtitle').textContent;
   const [period, day] = modalSubtitle.split(' ');
-  
+
   const dayMap = { '月': '月曜日', '火': '火曜日', '水': '水曜日', '木': '木曜日', '金': '金曜日' };
   const weekday = dayMap[day];
-  
+
   if (!weekday) {
     console.error('Failed to resolve weekday from day label:', day);
     return;
   }
-  
+
   // 該当する曜日の授業日を取得
   const classDays = getClassDaysByWeekday(weekday);
   if (classDays.length === 0) {
     console.error('No class days found for weekday:', weekday);
     return;
   }
-  
+
   const todayISO = getTodayISO();
-  
+
   // 今日以降の授業日を取得
   const futureClassDays = classDays.filter(d => d.date >= todayISO).sort((a, b) => a.date.localeCompare(b.date));
-  
+
+  // 日付から1日引く関数
+  const subtractOneDay = (dateStr) => {
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() - 1);
+    return formatDateLocal(date);
+  };
+
   let targetDate;
   switch (type) {
     case 'previous':
@@ -2557,18 +2564,32 @@ function setDate(type) {
       // 次の授業日
       targetDate = futureClassDays[1]?.date || futureClassDays[0]?.date || classDays[classDays.length - 1].date;
       break;
+    case 'nextMinusOne':
+      // Day before next class
+      const nextClassDay = futureClassDays[1]?.date || futureClassDays[0]?.date || classDays[classDays.length - 1].date;
+      targetDate = subtractOneDay(nextClassDay);
+      break;
     case 'nextWeek':
-      // 来週の授業日（7日後以降の最初の授業日）
+      // Class in next week (first class day after 7 days)
       const nextWeekDate = new Date(todayISO);
       nextWeekDate.setDate(nextWeekDate.getDate() + 7);
       const nextWeekISO = formatDateLocal(nextWeekDate);
       const nextWeekClassDays = classDays.filter(d => d.date >= nextWeekISO).sort((a, b) => a.date.localeCompare(b.date));
       targetDate = nextWeekClassDays[0]?.date || futureClassDays[futureClassDays.length - 1]?.date || classDays[classDays.length - 1].date;
       break;
+    case 'nextWeekMinusOne':
+      // Day before class in 2 weeks
+      const nextWeekDate2 = new Date(todayISO);
+      nextWeekDate2.setDate(nextWeekDate2.getDate() + 14);
+      const nextWeekISO2 = formatDateLocal(nextWeekDate2);
+      const nextWeekClassDays2 = classDays.filter(d => d.date >= nextWeekISO2).sort((a, b) => a.date.localeCompare(b.date));
+      const nextWeekClassDay = nextWeekClassDays2[0]?.date || futureClassDays[futureClassDays.length - 1]?.date || classDays[classDays.length - 1].date;
+      targetDate = subtractOneDay(nextWeekClassDay);
+      break;
     default:
       targetDate = futureClassDays[0]?.date || classDays[classDays.length - 1].date;
   }
-  
+
   if (targetDate) {
     document.getElementById('taskDate').value = targetDate;
   }
