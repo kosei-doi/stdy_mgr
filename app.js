@@ -2517,82 +2517,58 @@ function updateModalProgress(subjectId) {
   }
 }
 
-// 日付を設定する関数（@tablerから）
+// 日付を設定する関数（週ベース：月曜始まり）
 function setDate(type) {
   const modalSubtitle = document.getElementById('modalSubtitle').textContent;
   const [period, day] = modalSubtitle.split(' ');
 
-  const dayMap = { '月': '月曜日', '火': '火曜日', '水': '水曜日', '木': '木曜日', '金': '金曜日' };
-  const weekday = dayMap[day];
+  // 月曜=0, 火曜=1, 水曜=2, 木曜=3, 金曜=4
+  const dayOffsetMap = { '月': 0, '火': 1, '水': 2, '木': 3, '金': 4 };
+  const classWeekdayOffset = dayOffsetMap[day];
 
-  if (!weekday) {
+  if (classWeekdayOffset === undefined) {
     console.error('Failed to resolve weekday from day label:', day);
     return;
   }
 
-  // 該当する曜日の授業日を取得
-  const classDays = getClassDaysByWeekday(weekday);
-  if (classDays.length === 0) {
-    console.error('No class days found for weekday:', weekday);
-    return;
-  }
+  // 今週の月曜日を取得（週は月曜始まり）
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayOfWeek = today.getDay(); // 0=日, 1=月, ..., 6=土
+  const daysFromMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const thisMonday = new Date(today);
+  thisMonday.setDate(today.getDate() + daysFromMonday);
 
-  const todayISO = getTodayISO();
-
-  // 今日以降の授業日を取得
-  const futureClassDays = classDays.filter(d => d.date >= todayISO).sort((a, b) => a.date.localeCompare(b.date));
-
-  // 日付から1日引く関数
-  const subtractOneDay = (dateStr) => {
-    const date = new Date(dateStr);
-    date.setDate(date.getDate() - 1);
-    return formatDateLocal(date);
+  const addDays = (baseDate, days) => {
+    const d = new Date(baseDate);
+    d.setDate(d.getDate() + days);
+    return d;
   };
 
   let targetDate;
   switch (type) {
-    case 'previous':
-      // 前回の授業日（今日より前の最後の授業日）
-      const pastClassDays = classDays.filter(d => d.date < todayISO).sort((a, b) => b.date.localeCompare(a.date));
-      targetDate = pastClassDays.length > 0 ? pastClassDays[0].date : futureClassDays[0]?.date;
+    case 'prevWeekDayBefore':
+      // 先週の授業曜日の前日
+      targetDate = addDays(thisMonday, -7 + classWeekdayOffset - 1);
       break;
-    case 'current':
-      // 今回の授業日（今日以降の最初の授業日）
-      targetDate = futureClassDays[0]?.date || classDays[classDays.length - 1].date;
+    case 'thisWeekDayBefore':
+      // 今週の授業曜日の前日
+      targetDate = addDays(thisMonday, classWeekdayOffset - 1);
       break;
-    case 'next':
-      // 次の授業日
-      targetDate = futureClassDays[1]?.date || futureClassDays[0]?.date || classDays[classDays.length - 1].date;
-      break;
-    case 'nextMinusOne':
-      // Day before next class
-      const nextClassDay = futureClassDays[1]?.date || futureClassDays[0]?.date || classDays[classDays.length - 1].date;
-      targetDate = subtractOneDay(nextClassDay);
+    case 'nextWeekDayBefore':
+      // 来週の授業曜日の前日
+      targetDate = addDays(thisMonday, 7 + classWeekdayOffset - 1);
       break;
     case 'nextWeek':
-      // Class in next week (first class day after 7 days)
-      const nextWeekDate = new Date(todayISO);
-      nextWeekDate.setDate(nextWeekDate.getDate() + 7);
-      const nextWeekISO = formatDateLocal(nextWeekDate);
-      const nextWeekClassDays = classDays.filter(d => d.date >= nextWeekISO).sort((a, b) => a.date.localeCompare(b.date));
-      targetDate = nextWeekClassDays[0]?.date || futureClassDays[futureClassDays.length - 1]?.date || classDays[classDays.length - 1].date;
-      break;
-    case 'nextWeekMinusOne':
-      // Day before class in 2 weeks
-      const nextWeekDate2 = new Date(todayISO);
-      nextWeekDate2.setDate(nextWeekDate2.getDate() + 14);
-      const nextWeekISO2 = formatDateLocal(nextWeekDate2);
-      const nextWeekClassDays2 = classDays.filter(d => d.date >= nextWeekISO2).sort((a, b) => a.date.localeCompare(b.date));
-      const nextWeekClassDay = nextWeekClassDays2[0]?.date || futureClassDays[futureClassDays.length - 1]?.date || classDays[classDays.length - 1].date;
-      targetDate = subtractOneDay(nextWeekClassDay);
+      // 来週の授業曜日
+      targetDate = addDays(thisMonday, 7 + classWeekdayOffset);
       break;
     default:
-      targetDate = futureClassDays[0]?.date || classDays[classDays.length - 1].date;
+      console.error('Unknown setDate type:', type);
+      return;
   }
 
-  if (targetDate) {
-    document.getElementById('taskDate').value = targetDate;
-  }
+  document.getElementById('taskDate').value = formatDateLocal(targetDate);
 }
 
 // 進捗不足タスクを生成する関数
