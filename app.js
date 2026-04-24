@@ -2493,7 +2493,7 @@ function showTaskModal(period, day, subjectId) {
   modal.style.display = 'block';
   modalState = { subjectId, period, day };
 
-  setTimeout(() => setDate('nextMinusOne'), 100);
+  setTimeout(() => setDate('nextWeekDayBefore'), 100);
   setTimeout(() => updateModalProgress(subjectId), 200);
   
   const taskForm = document.getElementById('taskForm');
